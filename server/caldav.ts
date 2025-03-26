@@ -142,15 +142,19 @@ class CalDAVClient {
       try {
         log('Trying to discover calendars using PROPFIND on base URL', 'caldav');
         response = await this.client.propfind('', {
-          data: `
-            <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-              <d:prop>
-                <d:resourcetype />
-                <d:displayname />
-                <c:calendar-home-set />
-              </d:prop>
-            </d:propfind>
-          `
+          data: `<?xml version="1.0" encoding="utf-8" ?>
+            <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+              <D:prop>
+                <D:resourcetype/>
+                <D:displayname/>
+                <C:calendar-home-set/>
+                <C:supported-calendar-component-set/>
+              </D:prop>
+            </D:propfind>`,
+          headers: {
+            'Depth': '0',
+            'Prefer': 'return-minimal'
+          }
         });
       } catch (error) {
         log(`Initial calendar discovery failed: ${error}`, 'caldav');

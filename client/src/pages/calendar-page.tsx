@@ -38,7 +38,11 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (event: any) => {
-    setSelectedEvent(event);
+    // Set event and open modal in edit mode
+    setSelectedEvent({
+      ...event,
+      isEditMode: true
+    });
     setEventModalOpen(true);
   };
 

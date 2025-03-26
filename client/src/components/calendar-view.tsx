@@ -45,14 +45,13 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
         selectMirror: true,
         dayMaxEvents: true,
         nowIndicator: true,
-        eventDblClick: (info) => {
+        eventClick: (info) => {
           // Find the corresponding event in our data
           const event = events.find(e => e.id === parseInt(info.event.id));
           if (event) {
             onEventClick(event);
           }
         },
-        eventClick: () => {}, // Prevent single click from doing anything
         select: onDateSelect,
         datesSet: (dateInfo) => {
           // Update our date range state for event fetching

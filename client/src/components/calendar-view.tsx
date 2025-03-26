@@ -18,7 +18,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
   const calendarRef = useRef<HTMLDivElement>(null);
   const calendarInstanceRef = useRef<FullCalendar | null>(null);
   const [calendarReady, setCalendarReady] = useState(false);
-  
+
   const {
     events,
     eventsLoading,
@@ -28,12 +28,12 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
     viewType,
     setDateRange
   } = useCalDAV();
-  
+
   // Initialize calendar
   useEffect(() => {
     if (calendarRef.current && !calendarInstanceRef.current) {
       const calendarEl = calendarRef.current;
-      
+
       // Create the calendar instance
       const calendar = new FullCalendar(calendarEl, {
         plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -46,10 +46,13 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
         dayMaxEvents: true,
         nowIndicator: true,
         eventClick: (info) => {
-          // Find the corresponding event in our data
-          const event = events.find(e => e.id === parseInt(info.event.id));
+          // Find the corresponding event in our data.  Added type assertion and null check for robustness.
+          const eventId = parseInt(info.event.id, 10);
+          const event = events.find(e => e.id === eventId);
           if (event) {
             onEventClick(event);
+          } else {
+            console.error("Event not found in data:", info.event); //Added error logging for debugging
           }
         },
         select: onDateSelect,
@@ -61,12 +64,12 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
           });
         }
       });
-      
+
       calendar.render();
       calendarInstanceRef.current = calendar;
       setCalendarReady(true);
     }
-    
+
     // Cleanup
     return () => {
       if (calendarInstanceRef.current) {
@@ -75,20 +78,20 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
       }
     };
   }, []);
-  
+
   // Update calendar view type when it changes
   useEffect(() => {
     if (calendarInstanceRef.current && calendarReady) {
       calendarInstanceRef.current.changeView(viewType);
     }
   }, [viewType, calendarReady]);
-  
+
   // Update events when they change
   useEffect(() => {
     if (calendarInstanceRef.current && calendarReady && events && !eventsLoading) {
       // First, remove all events
       calendarInstanceRef.current.removeAllEvents();
-      
+
       // Then add the current events with their calendar colors
       const formattedEvents = events.map(event => {
         const calendar = calendars.find(cal => cal.id === event.calendarId);
@@ -106,11 +109,11 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
           }
         };
       });
-      
+
       calendarInstanceRef.current.addEventSource(formattedEvents);
     }
   }, [events, eventsLoading, calendars, calendarReady]);
-  
+
   return (
     <div className="relative h-full">
       {/* Loading state overlay */}
@@ -122,7 +125,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
           </div>
         </div>
       )}
-      
+
       {/* Error notification */}
       {eventError && (
         <Alert variant="destructive" className="mb-4">
@@ -132,7 +135,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
           </AlertDescription>
         </Alert>
       )}
-      
+
       {/* No active calendar message */}
       {!activeCalendar && !eventsLoading && (
         <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10">
@@ -146,7 +149,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
           </div>
         </div>
       )}
-      
+
       {/* Calendar container */}
       <div ref={calendarRef} className="h-full" />
     </div>

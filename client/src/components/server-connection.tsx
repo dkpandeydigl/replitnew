@@ -19,7 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const serverSchema = z
   .object({
-    url: z.string().url("https://zpush.ajaydata.com/davical/"),
+    url: z.string().url("Please enter a valid URL"),
     authType: z.enum(["username", "token"]),
     username: z.string().optional(),
     password: z.string().optional(),

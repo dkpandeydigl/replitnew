@@ -137,12 +137,25 @@ class CalDAVClient {
     try {
       log(`Discovering calendars at URL: ${this.baseUrl}`, 'caldav');
       
-      // For DAViCal, sometimes we need to directly check caldav.php directory
+      // For DAViCal, we need to use a specific format
       let response;
       try {
         const parser = new DOMParser();
-        log('Trying to discover calendars using PROPFIND on base URL', 'caldav');
+        log('Trying to discover calendars using PROPFIND with DAViCal format', 'caldav');
         response = await this.client.propfind('', {
+          data: `<?xml version="1.0" encoding="utf-8" ?>
+            <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+              <D:prop>
+                <D:resourcetype/>
+                <D:displayname/>
+                <C:supported-calendar-component-set/>
+              </D:prop>
+            </D:propfind>`,
+          headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Depth': '1'
+          }
+        });
           data: `<?xml version="1.0" encoding="utf-8" ?>
             <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
               <D:prop>

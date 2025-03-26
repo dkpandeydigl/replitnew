@@ -46,13 +46,12 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
         dayMaxEvents: true,
         nowIndicator: true,
         eventClick: (info) => {
-          // Find the corresponding event in our data.  Added type assertion and null check for robustness.
-          const eventId = parseInt(info.event.id, 10);
-          const event = events.find(e => e.id === eventId);
+          // Find the corresponding event in our data
+          const event = events.find(e => e.id.toString() === info.event.id);
           if (event) {
             onEventClick(event);
           } else {
-            console.error("Event not found in data:", info.event); //Added error logging for debugging
+            console.error("Event not found in data. Event ID:", info.event.id, "Available events:", events);
           }
         },
         select: onDateSelect,

@@ -64,6 +64,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Test connection before saving
       try {
+        console.log('Attempting CalDAV connection with:', {
+          url: serverUrl,
+          authType: serverData.authType,
+          username: serverData.username ? '(provided)' : '(not provided)',
+          password: serverData.password ? '(provided)' : '(not provided)',
+          token: serverData.token ? '(provided)' : '(not provided)'
+        });
+
+        // For the DAViCal server, make sure we're pointing to the correct root location
+        // The zpush.ajaydata.com/davical/ URL leads to a login page, not to CalDAV
+        // We need to use the user's "principal" URL which is usually under /caldav.php/username/
+        if (serverUrl.includes('zpush.ajaydata.com/davical') && serverData.username) {
+          // Adjust the URL to point to the user's principal collection
+          const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${serverData.username}/`;
+          console.log(`Adjusting URL for DAViCal to: ${principalUrl}`);
+          serverUrl = principalUrl;
+          serverData.url = principalUrl;
+        }
+        
         const auth = {
           type: serverData.authType as 'username' | 'token',
           username: serverData.username,
@@ -148,6 +167,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Initialize CalDAV client
+      let serverUrl = server.url;
+      
+      // For the DAViCal server, make sure we're pointing to the correct root location
+      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+        // Adjust the URL to point to the user's principal collection
+        const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+        console.log(`Using DAViCal adjusted URL: ${principalUrl}`);
+        serverUrl = principalUrl;
+      }
+      
       const auth = {
         type: server.authType as 'username' | 'token',
         username: server.username,
@@ -155,7 +184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: server.token
       };
       
-      const caldav = new CalDAVClient(server.url, auth);
+      const caldav = new CalDAVClient(serverUrl, auth);
       
       // Discover calendars
       const discoveredCalendars = await caldav.discoverCalendars();
@@ -272,6 +301,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Server not found" });
         }
         
+        let serverUrl = server.url;
+      
+        // For the DAViCal server, make sure we're pointing to the correct root location
+        if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+          // Adjust the URL to point to the user's principal collection
+          const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+          console.log(`Using DAViCal adjusted URL for events: ${principalUrl}`);
+          serverUrl = principalUrl;
+        }
+        
         const auth = {
           type: server.authType as 'username' | 'token',
           username: server.username,
@@ -279,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           token: server.token
         };
         
-        const caldav = new CalDAVClient(server.url, auth);
+        const caldav = new CalDAVClient(serverUrl, auth);
         const caldavEvents = await caldav.getEvents(calendar.url, start, end);
         
         // Sync with our database
@@ -343,6 +382,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Initialize CalDAV client
+      let serverUrl = server.url;
+      
+      // For the DAViCal server, make sure we're pointing to the correct root location
+      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+        // Adjust the URL to point to the user's principal collection
+        const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+        console.log(`Using DAViCal adjusted URL for event creation: ${principalUrl}`);
+        serverUrl = principalUrl;
+      }
+      
       const auth = {
         type: server.authType as 'username' | 'token',
         username: server.username,
@@ -350,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: server.token
       };
       
-      const caldav = new CalDAVClient(server.url, auth);
+      const caldav = new CalDAVClient(serverUrl, auth);
       
       // Create event on CalDAV server
       const startDate = new Date(validatedData.start);
@@ -423,6 +472,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Initialize CalDAV client
+      let serverUrl = server.url;
+      
+      // For the DAViCal server, make sure we're pointing to the correct root location
+      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+        // Adjust the URL to point to the user's principal collection
+        const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+        console.log(`Using DAViCal adjusted URL for event update: ${principalUrl}`);
+        serverUrl = principalUrl;
+      }
+      
       const auth = {
         type: server.authType as 'username' | 'token',
         username: server.username,
@@ -430,7 +489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: server.token
       };
       
-      const caldav = new CalDAVClient(server.url, auth);
+      const caldav = new CalDAVClient(serverUrl, auth);
       
       // Update event on CalDAV server
       const startDate = new Date(validatedData.start);

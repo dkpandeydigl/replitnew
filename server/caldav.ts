@@ -50,13 +50,14 @@ class CalDAVClient {
 
     // Set up authentication
     if (auth.type === 'username' && auth.username && auth.password) {
+      // For DAViCal, we need to include credentials in the Authorization header
+      const authString = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
+      headers['Authorization'] = `Basic ${authString}`;
       this.client = axios.create({
         baseURL: this.baseUrl,
         headers,
-        auth: {
-          username: auth.username,
-          password: auth.password
-        }
+        // Include withCredentials for CORS
+        withCredentials: true
       });
     } else if (auth.type === 'token' && auth.token) {
       headers['Authorization'] = `Bearer ${auth.token}`;

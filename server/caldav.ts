@@ -42,7 +42,7 @@ class CalDAVClient {
 
   constructor(baseUrl: string, auth: CalDAVAuth) {
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-    
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/xml; charset=utf-8',
       'Depth': '1',
@@ -68,7 +68,7 @@ class CalDAVClient {
     } else {
       throw new Error('Invalid authentication method');
     }
-    
+
     // Add WebDAV methods to the axios instance
     this.client.propfind = (url: string, config?: AxiosRequestConfig) => {
       return this.client.request({
@@ -82,7 +82,7 @@ class CalDAVClient {
         },
       });
     };
-    
+
     this.client.report = (url: string, config?: AxiosRequestConfig) => {
       return this.client.request({
         ...config,
@@ -107,7 +107,7 @@ class CalDAVClient {
         return true;
       } catch (optionsError) {
         log(`OPTIONS failed, trying GET: ${optionsError}`, 'caldav');
-        
+
         // If OPTIONS fails, try a simple GET
         try {
           await this.client.get('');
@@ -115,13 +115,13 @@ class CalDAVClient {
           return true;
         } catch (getError) {
           log(`GET failed, trying PROPFIND: ${getError}`, 'caldav');
-          
+
           // DAViCal usually responds to PROPFIND even if the path isn't correct
           await this.client.propfind('', {
             data: `<d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/></d:prop></d:propfind>`,
             headers: { 'Depth': '0' }
           });
-          
+
           log('CalDAV connection successful using PROPFIND', 'caldav');
           return true;
         }
@@ -136,7 +136,7 @@ class CalDAVClient {
   async discoverCalendars(): Promise<CalDAVCalendar[]> {
     try {
       log(`Discovering calendars at URL: ${this.baseUrl}`, 'caldav');
-      
+
       // For DAViCal, we need to use a specific format
       let response;
       try {
@@ -153,6 +153,35 @@ class CalDAVClient {
 
         const parser = new DOMParser();
         log('Trying to discover calendars using PROPFIND with DAViCal format', 'caldav');
+        // First find the principal URL
+        response = await this.client.propfind('', {
+          data: `<?xml version="1.0" encoding="utf-8" ?>
+            <D:propfind xmlns:D="DAV:">
+              <D:prop>
+                <D:current-user-principal/>
+              </D:prop>
+            </D:propfind>`,
+          headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Depth': '0'
+          }
+        });
+
+        // Then get the calendar-home-set
+        const homeResponse = await this.client.propfind('', {
+          data: `<?xml version="1.0" encoding="utf-8" ?>
+            <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+              <D:prop>
+                <C:calendar-home-set/>
+              </D:prop>
+            </D:propfind>`,
+          headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Depth': '0'
+          }
+        });
+
+        // Finally get the calendars
         response = await this.client.propfind('', {
           data: `<?xml version="1.0" encoding="utf-8" ?>
             <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -160,9 +189,6 @@ class CalDAVClient {
                 <D:resourcetype/>
                 <D:displayname/>
                 <C:supported-calendar-component-set/>
-                <D:current-user-principal/>
-                <C:calendar-home-set/>
-                <C:calendar-user-address-set/>
               </D:prop>
             </D:propfind>`,
           headers: {
@@ -170,33 +196,9 @@ class CalDAVClient {
             'Depth': '1'
           }
         });
-
-        // Check for principal URL first
-        const xmlDoc = parser.parseFromString(response.data, 'text/xml');
-        const principalNodes = xmlDoc.getElementsByTagNameNS('DAV:', 'current-user-principal');
-        if (principalNodes.length > 0) {
-          const hrefNodes = principalNodes[0].getElementsByTagNameNS('DAV:', 'href');
-          if (hrefNodes.length > 0) {
-            const principalUrl = hrefNodes[0].textContent;
-            if (principalUrl) {
-              // Get calendar home from principal URL
-              response = await this.client.propfind(principalUrl, {
-                data: `<?xml version="1.0" encoding="utf-8" ?>
-                  <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-                    <D:prop>
-                      <C:calendar-home-set/>
-                    </D:prop>
-                  </D:propfind>`,
-                headers: {
-                  'Depth': '0'
-                }
-              });
-            }
-          }
-        }
       } catch (error) {
         log(`Initial calendar discovery failed: ${error}`, 'caldav');
-        
+
         // Try different format for DAViCal
         log('Trying with alternate PROPFIND format for DAViCal', 'caldav');
         response = await this.client.propfind('', {
@@ -221,11 +223,11 @@ class CalDAVClient {
 
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(response.data, 'text/xml');
-      
+
       // Extract calendar home set URLs
       const homeSetNodes = xmlDoc.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-home-set');
       const homeSetUrls: string[] = [];
-      
+
       for (let i = 0; i < homeSetNodes.length; i++) {
         const node = homeSetNodes[i];
         const hrefNodes = node.getElementsByTagNameNS('DAV:', 'href');
@@ -262,7 +264,7 @@ class CalDAVClient {
         for (let i = 0; i < responses.length; i++) {
           const response = responses[i];
           const resourceTypes = response.getElementsByTagNameNS('DAV:', 'resourcetype');
-          
+
           // Check if this is a calendar resource
           let isCalendar = false;
           for (let j = 0; j < resourceTypes.length; j++) {
@@ -277,11 +279,11 @@ class CalDAVClient {
             const hrefNodes = response.getElementsByTagNameNS('DAV:', 'href');
             const displayNameNodes = response.getElementsByTagNameNS('DAV:', 'displayname');
             const colorNodes = response.getElementsByTagNameNS('http://apple.com/ns/ical/', 'calendar-color');
-            
+
             const href = hrefNodes[0]?.textContent ?? '';
             const displayName = displayNameNodes[0]?.textContent ?? 'Unnamed Calendar';
             const color = colorNodes[0]?.textContent ?? '#3B82F6';
-            
+
             if (href) {
               calendars.push({
                 url: href.startsWith('/') || href.startsWith('http') ? href : `${homeUrl}${href}`,
@@ -304,14 +306,14 @@ class CalDAVClient {
   async getEvents(calendarUrl: string, start?: Date, end?: Date): Promise<CalDAVEvent[]> {
     try {
       log(`Getting events from calendar at URL: ${calendarUrl}`, 'caldav');
-      
+
       if (start && end) {
         log(`Time range: ${start.toISOString()} to ${end.toISOString()}`, 'caldav');
       }
-      
+
       // Ensure calendar URL has trailing slash
       calendarUrl = calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
-      
+
       // Format time range for REPORT query
       const timeRange = start && end ? `
         <c:time-range 
@@ -324,7 +326,7 @@ class CalDAVClient {
       let response;
       try {
         log('Trying to get events with standard REPORT query', 'caldav');
-        
+
         response = await this.client.report(calendarUrl, {
           data: `
             <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
@@ -344,10 +346,10 @@ class CalDAVClient {
         });
       } catch (error) {
         log(`Standard REPORT failed: ${error}`, 'caldav');
-        
+
         // Try alternative REPORT format for DAViCal
         log('Trying alternative DAViCal REPORT format', 'caldav');
-        
+
         response = await this.client.report(calendarUrl, {
           data: `
             <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -374,18 +376,18 @@ class CalDAVClient {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(response.data, 'text/xml');
       const responses = xmlDoc.getElementsByTagNameNS('DAV:', 'response');
-      
+
       const events: CalDAVEvent[] = [];
-      
+
       for (let i = 0; i < responses.length; i++) {
         const response = responses[i];
         const hrefNodes = response.getElementsByTagNameNS('DAV:', 'href');
         const dataNodes = response.getElementsByTagNameNS('urn:ietf:params:xml:ns:caldav', 'calendar-data');
-        
+
         if (hrefNodes.length > 0 && dataNodes.length > 0) {
           const href = hrefNodes[0].textContent ?? '';
           const icsData = dataNodes[0].textContent ?? '';
-          
+
           // Parse ICS data
           const event = this.parseICSEvent(icsData, href);
           if (event) {
@@ -393,7 +395,7 @@ class CalDAVClient {
           }
         }
       }
-      
+
       return events;
     } catch (error) {
       log(`Failed to get events: ${error}`, 'caldav');
@@ -405,16 +407,16 @@ class CalDAVClient {
   async createEvent(calendarUrl: string, event: Omit<CalDAVEvent, 'uid' | 'url'>): Promise<CalDAVEvent> {
     try {
       log(`Creating event in calendar: ${calendarUrl}`, 'caldav');
-      
+
       // Ensure calendar URL has trailing slash
       calendarUrl = calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
-      
+
       const uid = this.generateUID();
       const eventUrl = `${calendarUrl}${uid}.ics`;
       const icsData = this.generateICS(event, uid);
-      
+
       log(`Creating event with UID: ${uid}`, 'caldav');
-      
+
       try {
         await this.client.put(eventUrl, icsData, {
           headers: {
@@ -423,7 +425,7 @@ class CalDAVClient {
         });
       } catch (error) {
         log(`Standard PUT failed: ${error}`, 'caldav');
-        
+
         // For DAViCal - try with If-None-Match header
         log('Trying PUT with If-None-Match header for DAViCal', 'caldav');
         await this.client.put(eventUrl, icsData, {
@@ -433,7 +435,7 @@ class CalDAVClient {
           }
         });
       }
-      
+
       return {
         uid,
         url: eventUrl,
@@ -449,9 +451,9 @@ class CalDAVClient {
   async updateEvent(event: CalDAVEvent): Promise<CalDAVEvent> {
     try {
       log(`Updating event: ${event.uid} at URL: ${event.url}`, 'caldav');
-      
+
       const icsData = this.generateICS(event, event.uid);
-      
+
       try {
         // First attempt standard PUT
         await this.client.put(event.url, icsData, {
@@ -461,7 +463,7 @@ class CalDAVClient {
         });
       } catch (error) {
         log(`Standard PUT update failed: ${error}`, 'caldav');
-        
+
         // Try another approach for DAViCal
         log('Trying PUT update with If-Match: * for DAViCal', 'caldav');
         await this.client.put(event.url, icsData, {
@@ -471,7 +473,7 @@ class CalDAVClient {
           }
         });
       }
-      
+
       return event;
     } catch (error) {
       log(`Failed to update event: ${error}`, 'caldav');
@@ -483,13 +485,13 @@ class CalDAVClient {
   async deleteEvent(url: string): Promise<boolean> {
     try {
       log(`Deleting event at URL: ${url}`, 'caldav');
-      
+
       try {
         // First try standard DELETE
         await this.client.delete(url);
       } catch (error) {
         log(`Standard DELETE failed: ${error}`, 'caldav');
-        
+
         // For DAViCal - try with special headers
         log('Trying DELETE with special headers for DAViCal', 'caldav');
         await this.client.delete(url, {
@@ -498,7 +500,7 @@ class CalDAVClient {
           }
         });
       }
-      
+
       return true;
     } catch (error) {
       log(`All DELETE attempts failed: ${error}`, 'caldav');
@@ -517,33 +519,33 @@ class CalDAVClient {
       const dtStartMatch = icsData.match(/DTSTART(?:;VALUE=DATE)?(?:;TZID=[\w/]+)?:(.*?)(?:\r?\n|\r)/);
       const dtEndMatch = icsData.match(/DTEND(?:;VALUE=DATE)?(?:;TZID=[\w/]+)?:(.*?)(?:\r?\n|\r)/);
       const rruleMatch = icsData.match(/RRULE:(.*?)(?:\r?\n|\r)/);
-      
+
       if (!uidMatch || !summaryMatch || !dtStartMatch || !dtEndMatch) {
         return null;
       }
-      
+
       const uid = uidMatch[1].trim();
       const title = summaryMatch[1].trim();
       const description = descriptionMatch ? descriptionMatch[1].trim() : undefined;
       const location = locationMatch ? locationMatch[1].trim() : undefined;
-      
+
       // Determine if all-day event by format of DTSTART
       const isAllDay = dtStartMatch[0].includes('VALUE=DATE') && !dtStartMatch[0].includes('TZID');
-      
+
       // Parse dates
       let start: Date, end: Date;
-      
+
       if (isAllDay) {
         // Format for all-day events: YYYYMMDD
         const startStr = dtStartMatch[1].trim();
         const endStr = dtEndMatch[1].trim();
-        
+
         start = new Date(
           parseInt(startStr.substring(0, 4)),
           parseInt(startStr.substring(4, 6)) - 1,
           parseInt(startStr.substring(6, 8))
         );
-        
+
         end = new Date(
           parseInt(endStr.substring(0, 4)),
           parseInt(endStr.substring(4, 6)) - 1,
@@ -553,14 +555,14 @@ class CalDAVClient {
         // Format for timed events: YYYYMMDDTHHmmssZ or with timezone
         const startStr = dtStartMatch[1].trim();
         const endStr = dtEndMatch[1].trim();
-        
+
         // Handle ISO format
         start = new Date(startStr.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?/, '$1-$2-$3T$4:$5:$6Z'));
         end = new Date(endStr.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?/, '$1-$2-$3T$4:$5:$6Z'));
       }
-      
+
       const recurrence = rruleMatch ? rruleMatch[1].trim() : undefined;
-      
+
       return {
         uid,
         url,
@@ -582,10 +584,10 @@ class CalDAVClient {
   private generateICS(event: Omit<CalDAVEvent, 'uid' | 'url'> & { uid?: string }, uid: string): string {
     const now = new Date();
     const dtstamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-    
+
     // Format dates
     let dtstart: string, dtend: string;
-    
+
     if (event.allDay) {
       // Format for all-day events: YYYYMMDD
       dtstart = `DTSTART;VALUE=DATE:${event.start.toISOString().split('T')[0].replace(/-/g, '')}`;
@@ -595,7 +597,7 @@ class CalDAVClient {
       dtstart = `DTSTART:${event.start.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`;
       dtend = `DTEND:${event.end.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}`;
     }
-    
+
     let icsData = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//CalDAV Client//EN
@@ -609,18 +611,18 @@ SUMMARY:${event.title}`;
     if (event.description) {
       icsData += `\nDESCRIPTION:${event.description}`;
     }
-    
+
     if (event.location) {
       icsData += `\nLOCATION:${event.location}`;
     }
-    
+
     if (event.recurrence) {
       icsData += `\nRRULE:${event.recurrence}`;
     }
-    
+
     icsData += `\nEND:VEVENT
 END:VCALENDAR`;
-    
+
     return icsData;
   }
 

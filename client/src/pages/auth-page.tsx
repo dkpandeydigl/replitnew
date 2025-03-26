@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Calendar } from "lucide-react";
+import { Calendar, Eye, EyeOff } from "lucide-react";
 import { insertUserSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +46,9 @@ const registerSchema = insertUserSchema.extend({
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState("login");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [location, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
 
@@ -138,14 +141,29 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Enter your password"
-                              {...field}
-                              autoComplete="current-password"
-                            />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input
+                                type={showLoginPassword ? "text" : "password"}
+                                placeholder="Enter your password"
+                                {...field}
+                                autoComplete="current-password"
+                                className="pr-10"
+                              />
+                            </FormControl>
+                            <button
+                              type="button"
+                              onClick={() => setShowLoginPassword(!showLoginPassword)}
+                              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+                              tabIndex={-1}
+                            >
+                              {showLoginPassword ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -190,14 +208,29 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Create a password"
-                              {...field}
-                              autoComplete="new-password"
-                            />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input
+                                type={showRegisterPassword ? "text" : "password"}
+                                placeholder="Create a password"
+                                {...field}
+                                autoComplete="new-password"
+                                className="pr-10"
+                              />
+                            </FormControl>
+                            <button
+                              type="button"
+                              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+                              tabIndex={-1}
+                            >
+                              {showRegisterPassword ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -208,14 +241,29 @@ export default function AuthPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Confirm your password"
-                              {...field}
-                              autoComplete="new-password"
-                            />
-                          </FormControl>
+                          <div className="relative">
+                            <FormControl>
+                              <Input
+                                type={showConfirmPassword ? "text" : "password"}
+                                placeholder="Confirm your password"
+                                {...field}
+                                autoComplete="new-password"
+                                className="pr-10"
+                              />
+                            </FormControl>
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-500"
+                              tabIndex={-1}
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}

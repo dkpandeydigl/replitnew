@@ -62,7 +62,8 @@ export function setupAuth(app: Express) {
 
         // If local auth fails, try CalDAV auth
         try {
-          const caldav = new CalDAVClient(`https://zpush.ajaydata.com/davical/caldav.php/${username}/`, {
+          // Try to connect to DAViCal root URL first
+          const caldav = new CalDAVClient(`https://zpush.ajaydata.com/davical/`, {
             type: 'username',
             username: username,
             password: password

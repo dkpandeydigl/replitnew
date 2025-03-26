@@ -311,8 +311,13 @@ class CalDAVClient {
         log(`Time range: ${start.toISOString()} to ${end.toISOString()}`, 'caldav');
       }
 
-      // Handle relative URLs
-      if (calendarUrl.startsWith('/')) {
+      // Handle relative URLs and ensure proper DAViCal format
+      if (this.baseUrl.includes('davical')) {
+        // For DAViCal, use the full URL path
+        if (!calendarUrl.startsWith('http')) {
+          calendarUrl = new URL(calendarUrl, this.baseUrl).href;
+        }
+      } else if (calendarUrl.startsWith('/')) {
         calendarUrl = new URL(calendarUrl, this.baseUrl).href;
       }
 
@@ -417,7 +422,7 @@ class CalDAVClient {
       if (calendarUrl.startsWith('/')) {
         calendarUrl = new URL(calendarUrl, this.baseUrl).href;
       }
-      
+
       // Ensure calendar URL has trailing slash
       calendarUrl = calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
 

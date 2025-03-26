@@ -147,7 +147,7 @@ class CalDAVClient {
           const cleanBaseUrl = this.baseUrl.replace(/\/+$/, '');
           // Add caldav.php path if not present
           if (!cleanBaseUrl.includes('caldav.php')) {
-            this.baseUrl = `${cleanBaseUrl}/caldav.php/`;
+            this.baseUrl = `${cleanBaseUrl}/caldav.php/${auth.username}/`;
           }
         }
 
@@ -309,6 +309,11 @@ class CalDAVClient {
 
       if (start && end) {
         log(`Time range: ${start.toISOString()} to ${end.toISOString()}`, 'caldav');
+      }
+
+      // Handle relative URLs
+      if (calendarUrl.startsWith('/')) {
+        calendarUrl = new URL(calendarUrl, this.baseUrl).href;
       }
 
       // Ensure calendar URL has trailing slash

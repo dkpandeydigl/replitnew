@@ -54,10 +54,11 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // Only use CalDAV authentication
+        // Try to authenticate with DAViCal
         try {
-          // Try to connect to DAViCal root URL first
-          const caldav = new CalDAVClient(`https://zpush.ajaydata.com/davical/`, {
+          // Use the correct principal URL format for DAViCal
+          const serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${username}/`;
+          const caldav = new CalDAVClient(serverUrl, {
             type: 'username',
             username: username,
             password: password
@@ -71,6 +72,10 @@ export function setupAuth(app: Express) {
             let user;
 
             if (existingUser) {
+              // Update existing user's password
+              await storage.updateUser(existingUser.id, {
+                password: await hashPassword(password)
+              });
               user = existingUser;
             } else {
               // Create new user
@@ -80,8 +85,7 @@ export function setupAuth(app: Express) {
               });
             }
 
-            // Automatically create CalDAV server connection
-            const serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${username}/`;
+            // Store CalDAV server connection
             await storage.createCaldavServer({
               userId: user.id,
               url: serverUrl,

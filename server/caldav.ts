@@ -99,10 +99,34 @@ class CalDAVClient {
   // Test connection to the CalDAV server
   async testConnection(): Promise<boolean> {
     try {
-      await this.client.options('');
-      return true;
+      // Try OPTIONS first as it's the lightest method
+      try {
+        await this.client.options('');
+        log('CalDAV connection successful using OPTIONS', 'caldav');
+        return true;
+      } catch (optionsError) {
+        log(`OPTIONS failed, trying GET: ${optionsError}`, 'caldav');
+        
+        // If OPTIONS fails, try a simple GET
+        try {
+          await this.client.get('');
+          log('CalDAV connection successful using GET', 'caldav');
+          return true;
+        } catch (getError) {
+          log(`GET failed, trying PROPFIND: ${getError}`, 'caldav');
+          
+          // DAViCal usually responds to PROPFIND even if the path isn't correct
+          await this.client.propfind('', {
+            data: `<d:propfind xmlns:d="DAV:"><d:prop><d:resourcetype/></d:prop></d:propfind>`,
+            headers: { 'Depth': '0' }
+          });
+          
+          log('CalDAV connection successful using PROPFIND', 'caldav');
+          return true;
+        }
+      }
     } catch (error) {
-      log(`CalDAV connection test failed: ${error}`, 'caldav');
+      log(`CalDAV connection test failed with all methods: ${error}`, 'caldav');
       return false;
     }
   }

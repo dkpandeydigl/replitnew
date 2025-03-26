@@ -44,28 +44,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: req.body.token
       };
       
-      // Test connection before saving
-      const auth = {
-        type: serverData.authType as 'username' | 'token',
-        username: serverData.username,
-        password: serverData.password,
-        token: serverData.token
-      };
-      
-      const caldav = new CalDAVClient(serverData.url, auth);
-      const connectionSuccessful = await caldav.testConnection();
-      
-      if (!connectionSuccessful) {
-        return res.status(400).json({ message: "Could not connect to CalDAV server" });
+      // Validate required fields based on auth type
+      if (serverData.authType === 'username' && (!serverData.username || !serverData.password)) {
+        return res.status(400).json({ message: "Username and password are required" });
       }
       
-      // Connection successful, save server
-      const server = await storage.createCaldavServer(serverData);
+      if (serverData.authType === 'token' && !serverData.token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
       
-      // Return server without sensitive data
-      const { password, token, ...sanitizedServer } = server;
-      res.status(201).json(sanitizedServer);
-    } catch (error) {
+      console.log(`Attempting to connect to CalDAV server at: ${serverData.url}`);
+      
+      // Make sure URL is properly formatted - trailing slash is important for some CalDAV servers
+      let serverUrl = serverData.url;
+      if (!serverUrl.endsWith('/')) {
+        serverUrl += '/';
+        serverData.url = serverUrl;
+      }
+      
+      // Test connection before saving
+      try {
+        const auth = {
+          type: serverData.authType as 'username' | 'token',
+          username: serverData.username,
+          password: serverData.password,
+          token: serverData.token
+        };
+        
+        const caldav = new CalDAVClient(serverUrl, auth);
+        const connectionSuccessful = await caldav.testConnection();
+        
+        if (!connectionSuccessful) {
+          console.log('Failed connection test to CalDAV server');
+          return res.status(400).json({ message: "Could not connect to CalDAV server" });
+        }
+        
+        console.log('Successfully connected to CalDAV server');
+        
+        // Connection successful, save server
+        const server = await storage.createCaldavServer(serverData);
+        
+        // Return server without sensitive data
+        const { password, token, ...sanitizedServer } = server;
+        res.status(201).json(sanitizedServer);
+      } catch (error: any) {
+        console.error('Error connecting to CalDAV server:', error.message);
+        return res.status(400).json({ message: `Failed to connect to CalDAV server: ${error.message}` });
+      }
+    } catch (error: any) {
+      console.error('Server error:', error.message);
       res.status(500).json({ message: `Failed to add server: ${error.message}` });
     }
   });

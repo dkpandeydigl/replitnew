@@ -140,6 +140,17 @@ class CalDAVClient {
       // For DAViCal, we need to use a specific format
       let response;
       try {
+        // For DAViCal, we need to construct the URL properly
+        if (this.baseUrl.includes('davical')) {
+          log('DAViCal server detected, adjusting URL format', 'caldav');
+          // Remove any trailing slashes
+          const cleanBaseUrl = this.baseUrl.replace(/\/+$/, '');
+          // Add caldav.php path if not present
+          if (!cleanBaseUrl.includes('caldav.php')) {
+            this.baseUrl = `${cleanBaseUrl}/caldav.php/`;
+          }
+        }
+
         const parser = new DOMParser();
         log('Trying to discover calendars using PROPFIND with DAViCal format', 'caldav');
         response = await this.client.propfind('', {

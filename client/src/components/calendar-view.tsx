@@ -46,12 +46,10 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
         dayMaxEvents: true,
         nowIndicator: true,
         eventClick: (info) => {
-          // Find the corresponding event in our data
-          const event = events.find(e => e.id.toString() === info.event.id);
+          // Get event data directly from extendedProps
+          const event = info.event.extendedProps.eventData;
           if (event) {
             onEventClick(event);
-          } else {
-            console.error("Event not found in data. Event ID:", info.event.id, "Available events:", events);
           }
         },
         select: onDateSelect,
@@ -104,7 +102,8 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
           borderColor: calendar?.color || '#3B82F6',
           extendedProps: {
             description: event.description,
-            location: event.location
+            location: event.location,
+            eventData: event // Add eventData to extendedProps
           }
         };
       });

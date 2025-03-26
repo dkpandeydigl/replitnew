@@ -1,6 +1,14 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { DOMParser } from 'xmldom';
 import { log } from './vite';
+
+// Extend axios for WebDAV methods
+declare module 'axios' {
+  interface AxiosInstance {
+    propfind(url: string, config?: AxiosRequestConfig): Promise<any>;
+    report(url: string, config?: AxiosRequestConfig): Promise<any>;
+  }
+}
 
 interface CalDAVAuth {
   type: 'username' | 'token';
@@ -59,6 +67,33 @@ class CalDAVClient {
     } else {
       throw new Error('Invalid authentication method');
     }
+    
+    // Add WebDAV methods to the axios instance
+    this.client.propfind = (url: string, config?: AxiosRequestConfig) => {
+      return this.client.request({
+        ...config,
+        method: 'PROPFIND',
+        url,
+        headers: {
+          ...config?.headers,
+          'Content-Type': 'application/xml',
+          'Depth': '1',
+        },
+      });
+    };
+    
+    this.client.report = (url: string, config?: AxiosRequestConfig) => {
+      return this.client.request({
+        ...config,
+        method: 'REPORT',
+        url,
+        headers: {
+          ...config?.headers,
+          'Content-Type': 'application/xml',
+          'Depth': '1',
+        },
+      });
+    };
   }
 
   // Test connection to the CalDAV server

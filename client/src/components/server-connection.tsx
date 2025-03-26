@@ -81,11 +81,14 @@ export default function ServerConnection() {
                   </FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="https://nextcloud.example.com/remote.php/dav"
+                      placeholder="https://zpush.ajaydata.com/davical"
                       className="w-full p-2 text-sm"
                       {...field}
                     />
                   </FormControl>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Example: https://zpush.ajaydata.com/davical
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}

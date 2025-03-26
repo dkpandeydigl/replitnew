@@ -4,9 +4,9 @@ import { log } from './vite';
 
 interface CalDAVAuth {
   type: 'username' | 'token';
-  username?: string;
-  password?: string;
-  token?: string;
+  username?: string | null;
+  password?: string | null;
+  token?: string | null;
 }
 
 interface CalDAVCalendar {

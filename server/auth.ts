@@ -53,12 +53,41 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // First try local auth
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false);
-        } else {
+        if (user && (await comparePasswords(password, user.password))) {
           return done(null, user);
         }
+
+        // If local auth fails, try CalDAV auth
+        try {
+          const caldav = new CalDAVClient(`https://zpush.ajaydata.com/davical/caldav.php/${username}/`, {
+            type: 'username',
+            username,
+            password
+          });
+          
+          // Test connection to verify credentials
+          const isValid = await caldav.testConnection();
+          if (isValid) {
+            // Create or update local user if CalDAV auth succeeds
+            const existingUser = await storage.getUserByUsername(username);
+            if (existingUser) {
+              return done(null, existingUser);
+            }
+            
+            // Create new user
+            const newUser = await storage.createUser({
+              username,
+              password: await hashPassword(password)
+            });
+            return done(null, newUser);
+          }
+        } catch (caldavError) {
+          console.error('CalDAV auth failed:', caldavError);
+        }
+
+        return done(null, false);
       } catch (error) {
         return done(error);
       }

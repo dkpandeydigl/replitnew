@@ -83,13 +83,18 @@ export default function ServerConnection() {
         Server Connection
       </h2>
       
-      {isConnected ? (
-        <Alert className="bg-green-50 border-green-200 mb-3">
-          <Check className="h-4 w-4 text-green-500 mr-2" />
-          <AlertDescription className="text-sm text-green-700">
-            Connected to server
-          </AlertDescription>
-        </Alert>
+      {isConnected && servers?.length > 0 ? (
+        <div>
+          <Alert className="bg-green-50 border-green-200 mb-2">
+            <Check className="h-4 w-4 text-green-500 mr-2" />
+            <AlertDescription className="text-sm text-green-700">
+              Connected to server
+            </AlertDescription>
+          </Alert>
+          <div className="text-xs text-gray-600 break-all px-2">
+            Server URL: {servers[0].url}
+          </div>
+        </div>
       ) : (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">

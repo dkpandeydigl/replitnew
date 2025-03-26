@@ -413,11 +413,16 @@ class CalDAVClient {
     try {
       log(`Creating event in calendar: ${calendarUrl}`, 'caldav');
 
+      // Handle relative URLs and ensure proper format for DAViCal
+      if (calendarUrl.startsWith('/')) {
+        calendarUrl = new URL(calendarUrl, this.baseUrl).href;
+      }
+      
       // Ensure calendar URL has trailing slash
       calendarUrl = calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
 
       const uid = this.generateUID();
-      const eventUrl = `${calendarUrl}${uid}.ics`;
+      const eventUrl = calendarUrl + uid + '.ics';
       const icsData = this.generateICS(event, uid);
 
       log(`Creating event with UID: ${uid}`, 'caldav');

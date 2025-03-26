@@ -86,6 +86,15 @@ export class MemStorage implements IStorage {
     return user;
   }
 
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) return undefined;
+    
+    const updatedUser = { ...existingUser, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
   // CalDAV Server methods
   async getCaldavServers(userId: number): Promise<CaldavServer[]> {
     return Array.from(this.caldavServers.values()).filter(

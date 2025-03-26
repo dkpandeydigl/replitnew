@@ -149,6 +149,9 @@ class CalDAVClient {
                 <D:resourcetype/>
                 <D:displayname/>
                 <C:supported-calendar-component-set/>
+                <D:current-user-principal/>
+                <C:calendar-home-set/>
+                <C:calendar-user-address-set/>
               </D:prop>
             </D:propfind>`,
           headers: {
@@ -156,7 +159,6 @@ class CalDAVClient {
             'Depth': '1'
           }
         });
-          data: `<?xml version="1.0" encoding="utf-8" ?>
             <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
               <D:prop>
                 <D:resourcetype/>

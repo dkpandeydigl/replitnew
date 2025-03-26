@@ -159,20 +159,6 @@ class CalDAVClient {
             'Depth': '1'
           }
         });
-            <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-              <D:prop>
-                <D:resourcetype/>
-                <D:displayname/>
-                <D:current-user-principal/>
-                <C:calendar-home-set/>
-                <C:calendar-user-address-set/>
-              </D:prop>
-            </D:propfind>`,
-          headers: {
-            'Depth': '1',
-            'Content-Type': 'application/xml; charset=utf-8'
-          }
-        });
 
         // Check for principal URL first
         const xmlDoc = parser.parseFromString(response.data, 'text/xml');

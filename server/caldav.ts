@@ -147,15 +147,38 @@ class CalDAVClient {
               <D:prop>
                 <D:resourcetype/>
                 <D:displayname/>
+                <D:current-user-principal/>
                 <C:calendar-home-set/>
-                <C:supported-calendar-component-set/>
               </D:prop>
             </D:propfind>`,
           headers: {
-            'Depth': '0',
-            'Prefer': 'return-minimal'
+            'Depth': '0'
           }
         });
+
+        // Check for principal URL first
+        const xmlDoc = parser.parseFromString(response.data, 'text/xml');
+        const principalNodes = xmlDoc.getElementsByTagNameNS('DAV:', 'current-user-principal');
+        if (principalNodes.length > 0) {
+          const hrefNodes = principalNodes[0].getElementsByTagNameNS('DAV:', 'href');
+          if (hrefNodes.length > 0) {
+            const principalUrl = hrefNodes[0].textContent;
+            if (principalUrl) {
+              // Get calendar home from principal URL
+              response = await this.client.propfind(principalUrl, {
+                data: `<?xml version="1.0" encoding="utf-8" ?>
+                  <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+                    <D:prop>
+                      <C:calendar-home-set/>
+                    </D:prop>
+                  </D:propfind>`,
+                headers: {
+                  'Depth': '0'
+                }
+              });
+            }
+          }
+        }
       } catch (error) {
         log(`Initial calendar discovery failed: ${error}`, 'caldav');
         

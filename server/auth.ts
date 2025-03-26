@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { log } from "./vite";
+import CalDAVClient from "./caldav";
 
 declare global {
   namespace Express {

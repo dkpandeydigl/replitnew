@@ -63,8 +63,8 @@ export function setupAuth(app: Express) {
         try {
           const caldav = new CalDAVClient(`https://zpush.ajaydata.com/davical/caldav.php/${username}/`, {
             type: 'username',
-            username,
-            password
+            username: username,
+            password: password
           });
           
           // Test connection to verify credentials

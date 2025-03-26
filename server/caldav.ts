@@ -134,17 +134,47 @@ class CalDAVClient {
   // Discover calendars on the server
   async discoverCalendars(): Promise<CalDAVCalendar[]> {
     try {
-      const response = await this.client.propfind('', {
-        data: `
-          <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-            <d:prop>
-              <d:resourcetype />
-              <d:displayname />
-              <c:calendar-home-set />
-            </d:prop>
-          </d:propfind>
-        `
-      });
+      log(`Discovering calendars at URL: ${this.baseUrl}`, 'caldav');
+      
+      // For DAViCal, sometimes we need to directly check caldav.php directory
+      let response;
+      try {
+        log('Trying to discover calendars using PROPFIND on base URL', 'caldav');
+        response = await this.client.propfind('', {
+          data: `
+            <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+              <d:prop>
+                <d:resourcetype />
+                <d:displayname />
+                <c:calendar-home-set />
+              </d:prop>
+            </d:propfind>
+          `
+        });
+      } catch (error) {
+        log(`Initial calendar discovery failed: ${error}`, 'caldav');
+        
+        // Try different format for DAViCal
+        log('Trying with alternate PROPFIND format for DAViCal', 'caldav');
+        response = await this.client.propfind('', {
+          data: `
+            <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+              <D:prop>
+                <D:resourcetype/>
+                <D:displayname/>
+                <C:calendar-home-set/>
+                <C:calendar-user-address-set/>
+                <C:schedule-inbox-URL/>
+                <C:schedule-outbox-URL/>
+              </D:prop>
+            </D:propfind>
+          `,
+          headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Depth': '0'
+          }
+        });
+      }
 
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(response.data, 'text/xml');
@@ -230,6 +260,16 @@ class CalDAVClient {
   // Get events from a calendar
   async getEvents(calendarUrl: string, start?: Date, end?: Date): Promise<CalDAVEvent[]> {
     try {
+      log(`Getting events from calendar at URL: ${calendarUrl}`, 'caldav');
+      
+      if (start && end) {
+        log(`Time range: ${start.toISOString()} to ${end.toISOString()}`, 'caldav');
+      }
+      
+      // Ensure calendar URL has trailing slash
+      calendarUrl = calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
+      
+      // Format time range for REPORT query
       const timeRange = start && end ? `
         <c:time-range 
           start="${start.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}" 
@@ -237,23 +277,56 @@ class CalDAVClient {
         />
       ` : '';
 
-      const response = await this.client.report(calendarUrl, {
-        data: `
-          <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
-            <d:prop>
-              <d:getetag />
-              <c:calendar-data />
-            </d:prop>
-            <c:filter>
-              <c:comp-filter name="VCALENDAR">
-                <c:comp-filter name="VEVENT">
-                  ${timeRange}
+      // Try standard REPORT request first
+      let response;
+      try {
+        log('Trying to get events with standard REPORT query', 'caldav');
+        
+        response = await this.client.report(calendarUrl, {
+          data: `
+            <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+              <d:prop>
+                <d:getetag />
+                <c:calendar-data />
+              </d:prop>
+              <c:filter>
+                <c:comp-filter name="VCALENDAR">
+                  <c:comp-filter name="VEVENT">
+                    ${timeRange}
+                  </c:comp-filter>
                 </c:comp-filter>
-              </c:comp-filter>
-            </c:filter>
-          </c:calendar-query>
-        `
-      });
+              </c:filter>
+            </c:calendar-query>
+          `
+        });
+      } catch (error) {
+        log(`Standard REPORT failed: ${error}`, 'caldav');
+        
+        // Try alternative REPORT format for DAViCal
+        log('Trying alternative DAViCal REPORT format', 'caldav');
+        
+        response = await this.client.report(calendarUrl, {
+          data: `
+            <C:calendar-query xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+              <D:prop>
+                <D:getetag />
+                <C:calendar-data />
+              </D:prop>
+              <C:filter>
+                <C:comp-filter name="VCALENDAR">
+                  <C:comp-filter name="VEVENT">
+                    ${timeRange}
+                  </C:comp-filter>
+                </C:comp-filter>
+              </C:filter>
+            </C:calendar-query>
+          `,
+          headers: {
+            'Content-Type': 'application/xml; charset=utf-8',
+            'Depth': '1'
+          }
+        });
+      }
 
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(response.data, 'text/xml');
@@ -288,15 +361,35 @@ class CalDAVClient {
   // Create a new event
   async createEvent(calendarUrl: string, event: Omit<CalDAVEvent, 'uid' | 'url'>): Promise<CalDAVEvent> {
     try {
+      log(`Creating event in calendar: ${calendarUrl}`, 'caldav');
+      
+      // Ensure calendar URL has trailing slash
+      calendarUrl = calendarUrl.endsWith('/') ? calendarUrl : `${calendarUrl}/`;
+      
       const uid = this.generateUID();
       const eventUrl = `${calendarUrl}${uid}.ics`;
       const icsData = this.generateICS(event, uid);
       
-      await this.client.put(eventUrl, icsData, {
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8'
-        }
-      });
+      log(`Creating event with UID: ${uid}`, 'caldav');
+      
+      try {
+        await this.client.put(eventUrl, icsData, {
+          headers: {
+            'Content-Type': 'text/calendar; charset=utf-8'
+          }
+        });
+      } catch (error) {
+        log(`Standard PUT failed: ${error}`, 'caldav');
+        
+        // For DAViCal - try with If-None-Match header
+        log('Trying PUT with If-None-Match header for DAViCal', 'caldav');
+        await this.client.put(eventUrl, icsData, {
+          headers: {
+            'Content-Type': 'text/calendar; charset=utf-8',
+            'If-None-Match': '*'
+          }
+        });
+      }
       
       return {
         uid,
@@ -312,13 +405,29 @@ class CalDAVClient {
   // Update an existing event
   async updateEvent(event: CalDAVEvent): Promise<CalDAVEvent> {
     try {
+      log(`Updating event: ${event.uid} at URL: ${event.url}`, 'caldav');
+      
       const icsData = this.generateICS(event, event.uid);
       
-      await this.client.put(event.url, icsData, {
-        headers: {
-          'Content-Type': 'text/calendar; charset=utf-8'
-        }
-      });
+      try {
+        // First attempt standard PUT
+        await this.client.put(event.url, icsData, {
+          headers: {
+            'Content-Type': 'text/calendar; charset=utf-8'
+          }
+        });
+      } catch (error) {
+        log(`Standard PUT update failed: ${error}`, 'caldav');
+        
+        // Try another approach for DAViCal
+        log('Trying PUT update with If-Match: * for DAViCal', 'caldav');
+        await this.client.put(event.url, icsData, {
+          headers: {
+            'Content-Type': 'text/calendar; charset=utf-8',
+            'If-Match': '*'
+          }
+        });
+      }
       
       return event;
     } catch (error) {
@@ -330,10 +439,26 @@ class CalDAVClient {
   // Delete an event
   async deleteEvent(url: string): Promise<boolean> {
     try {
-      await this.client.delete(url);
+      log(`Deleting event at URL: ${url}`, 'caldav');
+      
+      try {
+        // First try standard DELETE
+        await this.client.delete(url);
+      } catch (error) {
+        log(`Standard DELETE failed: ${error}`, 'caldav');
+        
+        // For DAViCal - try with special headers
+        log('Trying DELETE with special headers for DAViCal', 'caldav');
+        await this.client.delete(url, {
+          headers: {
+            'If-Match': '*'
+          }
+        });
+      }
+      
       return true;
     } catch (error) {
-      log(`Failed to delete event: ${error}`, 'caldav');
+      log(`All DELETE attempts failed: ${error}`, 'caldav');
       throw new Error(`Failed to delete event: ${error}`);
     }
   }

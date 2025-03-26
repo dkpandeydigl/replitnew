@@ -556,6 +556,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Initialize CalDAV client
+      let serverUrl = server.url;
+      
+      // For the DAViCal server, make sure we're pointing to the correct root location
+      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+        // Adjust the URL to point to the user's principal collection
+        const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+        console.log(`Using DAViCal adjusted URL for event deletion: ${principalUrl}`);
+        serverUrl = principalUrl;
+      }
+      
       const auth = {
         type: server.authType as 'username' | 'token',
         username: server.username,
@@ -563,7 +573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: server.token
       };
       
-      const caldav = new CalDAVClient(server.url, auth);
+      const caldav = new CalDAVClient(serverUrl, auth);
       
       // Delete from CalDAV server
       await caldav.deleteEvent(event.url);

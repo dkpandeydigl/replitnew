@@ -62,8 +62,14 @@ export default function ServerConnection() {
       token: values.token ? "***" : undefined
     });
     
+    // Format URL for DAViCal - ensure proper path structure
+    let serverUrl = values.url;
+    if (values.authType === 'username' && values.username && serverUrl.includes('zpush.ajaydata.com/davical')) {
+      serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${values.username}/`;
+    }
+    
     connectServerMutation.mutate({
-      url: values.url,
+      url: serverUrl,
       authType: values.authType,
       username: values.username,
       password: values.password,

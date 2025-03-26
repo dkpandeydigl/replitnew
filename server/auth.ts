@@ -33,7 +33,7 @@ async function comparePasswords(supplied: string, stored: string) {
 export function setupAuth(app: Express) {
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
   log(`Using session secret: ${sessionSecret.substring(0, 5)}...`, 'auth');
-  
+
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
     resave: false,
@@ -54,13 +54,7 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        // First try local auth
-        const user = await storage.getUserByUsername(username);
-        if (user && (await comparePasswords(password, user.password))) {
-          return done(null, user);
-        }
-
-        // If local auth fails, try CalDAV auth
+        // Only use CalDAV authentication
         try {
           // Try to connect to DAViCal root URL first
           const caldav = new CalDAVClient(`https://zpush.ajaydata.com/davical/`, {
@@ -68,14 +62,14 @@ export function setupAuth(app: Express) {
             username: username,
             password: password
           });
-          
+
           // Test connection to verify credentials
           const isValid = await caldav.testConnection();
           if (isValid) {
             // Create or update local user if CalDAV auth succeeds
             const existingUser = await storage.getUserByUsername(username);
             let user;
-            
+
             if (existingUser) {
               user = existingUser;
             } else {
@@ -144,7 +138,7 @@ export function setupAuth(app: Express) {
     passport.authenticate("local", (err, user, info) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: "Invalid credentials" });
-      
+
       req.login(user, (err) => {
         if (err) return next(err);
         res.status(200).json(user);

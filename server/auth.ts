@@ -74,16 +74,29 @@ export function setupAuth(app: Express) {
           if (isValid) {
             // Create or update local user if CalDAV auth succeeds
             const existingUser = await storage.getUserByUsername(username);
-            if (existingUser) {
-              return done(null, existingUser);
-            }
+            let user;
             
-            // Create new user
-            const newUser = await storage.createUser({
+            if (existingUser) {
+              user = existingUser;
+            } else {
+              // Create new user
+              user = await storage.createUser({
+                username,
+                password: await hashPassword(password)
+              });
+            }
+
+            // Automatically create CalDAV server connection
+            const serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${username}/`;
+            await storage.createCaldavServer({
+              userId: user.id,
+              url: serverUrl,
+              authType: 'username',
               username,
-              password: await hashPassword(password)
+              password,
             });
-            return done(null, newUser);
+
+            return done(null, user);
           }
         } catch (caldavError) {
           console.error('CalDAV auth failed:', caldavError);

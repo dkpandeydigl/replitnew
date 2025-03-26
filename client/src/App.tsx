@@ -2,11 +2,13 @@ import { Switch, Route, useLocation } from "wouter";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import CalendarPage from "@/pages/calendar-page";
-import { AuthProvider, useAuth } from "./hooks/use-auth";
+import { AuthProvider } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
+import { AuthenticatedRoutes } from "./routes";
+
 
 // This component uses the auth context
 function AuthenticatedRoutes() {

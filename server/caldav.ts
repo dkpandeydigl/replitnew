@@ -42,19 +42,24 @@ class CalDAVClient {
 
     // Set up authentication
     if (auth.type === 'username' && auth.username && auth.password) {
+      // Use basic auth with base64 encoding
+      const credentials = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
+      headers['Authorization'] = `Basic ${credentials}`;
       this.client = axios.create({
         baseURL: this.baseUrl,
         headers,
-        auth: {
-          username: auth.username,
-          password: auth.password
+        validateStatus: (status) => {
+          return status < 500; // Allow non-500 responses to be handled
         }
       });
     } else if (auth.type === 'token' && auth.token) {
       headers['Authorization'] = `Bearer ${auth.token}`;
       this.client = axios.create({
         baseURL: this.baseUrl,
-        headers
+        headers,
+        validateStatus: (status) => {
+          return status < 500;
+        }
       });
     } else {
       throw new Error('Invalid authentication method');
@@ -64,8 +69,16 @@ class CalDAVClient {
   // Test connection to the CalDAV server
   async testConnection(): Promise<boolean> {
     try {
-      await this.client.options('');
-      return true;
+      const response = await this.client.options('');
+      if (response.status === 401) {
+        log(`CalDAV authentication failed: Invalid credentials`, 'caldav');
+        return false;
+      }
+      if (response.status >= 200 && response.status < 300) {
+        return true;
+      }
+      log(`CalDAV connection test failed with status ${response.status}`, 'caldav');
+      return false;
     } catch (error) {
       log(`CalDAV connection test failed: ${error}`, 'caldav');
       return false;

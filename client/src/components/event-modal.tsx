@@ -30,24 +30,27 @@ import { Label } from './ui/label';
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
+  const defaultValues = {
+    title: '',
+    description: '',
+    location: '',
+    start: selectedDate?.toISOString().slice(0, 16) || '',
+    end: selectedDate?.toISOString().slice(0, 16) || '',
+    allDay: false,
+    calendarId: calendars[0]?.id,
+    recurrence: null
+  };
+
   const form = useForm({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      location: '',
-      start: selectedDate?.toISOString().slice(0, 16) || '',
-      end: selectedDate?.toISOString().slice(0, 16) || '',
-      allDay: false,
-      calendarId: calendars[0]?.id,
-      recurrence: null
-    }
+    defaultValues
   });
 
-  // Populate form when event is selected
+  // Populate form when event changes
   useEffect(() => {
     if (event) {
       form.reset({
+        ...defaultValues,
         title: event.title,
         description: event.description || '',
         location: event.location || '',
@@ -60,6 +63,11 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
     }
   }, [event, form]);
 
+  const handleClose = () => {
+    form.reset(defaultValues);
+    onClose();
+  };
+
   const onSubmit = async (data: EventFormData) => {
     try {
       if (event) {
@@ -67,14 +75,14 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       } else {
         await createEventMutation.mutateAsync(data);
       }
-      onClose();
+      handleClose();
     } catch (error) {
       console.error('Failed to save event:', error);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

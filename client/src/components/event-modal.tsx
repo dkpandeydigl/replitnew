@@ -45,7 +45,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       allDay: false,
       description: '',
       location: '',
-      calendarId: calendars[0]?.id,
+      calendarId: calendars[0]?.id || 0,
       recurrence: undefined
     },
   });
@@ -305,6 +305,32 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="calendarId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calendar</FormLabel>
+                  <Select
+                    value={field.value.toString()}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a calendar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {calendars.map((calendar) => (
+                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
+                          {calendar.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="allDay"

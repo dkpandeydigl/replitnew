@@ -33,12 +33,12 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: event?.title || '',
-      start: event?.start?.toISOString().split('.')[0] || new Date().toISOString().split('.')[0],
-      end: event?.end?.toISOString().split('.')[0] || new Date().toISOString().split('.')[0],
+      start: event?.start ? new Date(event.start).toISOString().split('.')[0] : new Date().toISOString().split('.')[0],
+      end: event?.end ? new Date(event.end).toISOString().split('.')[0] : new Date().toISOString().split('.')[0],
       allDay: event?.allDay || false,
       description: event?.description || '',
       location: event?.location || '',
-      calendarId: event?.calendarId || undefined,
+      calendarId: event?.calendarId || calendars[0]?.id,
     },
   });
 
@@ -46,8 +46,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     if (event) {
       form.reset({
         title: event.title,
-        start: event.start.toISOString().split('.')[0],
-        end: event.end.toISOString().split('.')[0],
+        start: new Date(event.start).toISOString().split('.')[0],
+        end: new Date(event.end).toISOString().split('.')[0],
         allDay: event.allDay,
         description: event.description || '',
         location: event.location || '',

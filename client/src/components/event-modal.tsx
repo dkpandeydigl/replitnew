@@ -24,7 +24,8 @@ import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch, Label } from './ui/switch';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();

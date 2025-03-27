@@ -32,7 +32,16 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
+    defaultValues: event ? {
+      title: event.title,
+      description: event.description || '',
+      location: event.location || '',
+      start: new Date(event.start).toISOString().slice(0, 16),
+      end: new Date(event.end).toISOString().slice(0, 16),
+      allDay: event.allDay,
+      calendarId: event.calendarId,
+      recurrence: event.recurrence
+    } : {
       title: '',
       description: '',
       location: '',
@@ -44,7 +53,6 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
     }
   });
 
-  // Update form when event changes
   useEffect(() => {
     if (event) {
       form.reset({
@@ -57,18 +65,35 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         calendarId: event.calendarId,
         recurrence: event.recurrence
       });
+    } else {
+      form.reset({
+        title: '',
+        description: '',
+        location: '',
+        start: selectedDate?.toISOString().slice(0, 16) || '',
+        end: selectedDate?.toISOString().slice(0, 16) || '',
+        allDay: false,
+        calendarId: calendars[0]?.id || '',
+        recurrence: null
+      });
     }
-  }, [event, form]);
+  }, [event, selectedDate, calendars, form]);
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      if (event?.id) {
+      if (event) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...data
+          ...data,
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString()
         });
       } else {
-        await createEventMutation.mutateAsync(data);
+        await createEventMutation.mutateAsync({
+          ...data,
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString()
+        });
       }
       form.reset();
       onClose();

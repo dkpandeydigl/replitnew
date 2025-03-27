@@ -25,34 +25,40 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from '@/components/ui/textarea';
 import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
+import {useEffect} from 'react';
 
-
-export default function EventModal({ 
-  isOpen, 
-  onClose, 
-  event, 
-  selectedDate 
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  event?: Event;
-  selectedDate?: Date;
-}) {
+export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: event?.title || '',
-      description: event?.description || '',
-      location: event?.location || '',
-      start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
-      end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
-      allDay: event?.allDay || false,
-      calendarId: event?.calendarId || (calendars[0]?.id || ''),
-      recurrence: event?.recurrence || null
+      title: '',
+      description: '',
+      location: '',
+      start: selectedDate?.toISOString().slice(0, 16) || '',
+      end: selectedDate?.toISOString().slice(0, 16) || '',
+      allDay: false,
+      calendarId: calendars[0]?.id || '',
+      recurrence: null
     }
   });
+
+  // Update form when event changes
+  useEffect(() => {
+    if (event) {
+      form.reset({
+        title: event.title,
+        description: event.description || '',
+        location: event.location || '',
+        start: new Date(event.start).toISOString().slice(0, 16),
+        end: new Date(event.end).toISOString().slice(0, 16),
+        allDay: event.allDay,
+        calendarId: event.calendarId,
+        recurrence: event.recurrence
+      });
+    }
+  }, [event, form]);
 
   const onSubmit = async (data: EventFormData) => {
     try {

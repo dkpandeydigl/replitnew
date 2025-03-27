@@ -1,13 +1,14 @@
+
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { Button } from './ui/button';
 import { Input } from './ui/input';
+import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
-import { Event, EventFormData } from '@shared/schema';
-import { useCalDAV } from '@/hooks/use-caldav';
-import { format } from 'date-fns';
 import { useToast } from './ui/use-toast';
+import { EventFormData, Event } from '@shared/schema';
+import { useCalDAV } from '@/hooks/use-caldav';
 
 interface EditEventDialogProps {
   event: Event | null;
@@ -20,11 +21,11 @@ export function EditEventDialog({ event, isOpen, onClose }: EditEventDialogProps
   const { toast } = useToast();
   const [formData, setFormData] = useState<EventFormData>({
     title: '',
+    description: '',
+    location: '',
     start: '',
     end: '',
     allDay: false,
-    description: '',
-    location: '',
     calendarId: 0
   });
 
@@ -47,7 +48,11 @@ export function EditEventDialog({ event, isOpen, onClose }: EditEventDialogProps
     if (!event) return;
 
     try {
-      await updateEvent(event.id, formData);
+      await updateEvent(event.id, {
+        ...formData,
+        description: formData.description || null,
+        location: formData.location || null
+      });
       toast({
         title: "Success",
         description: "Event updated successfully",

@@ -1,3 +1,4 @@
+
 import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -92,16 +93,16 @@ export const insertEventSchema = createInsertSchema(events).pick({
 // Schema for frontend event creation/update
 export const eventFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  description: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
   start: z.string().min(1, "Start date is required"),
   end: z.string().min(1, "End date is required"),
   allDay: z.boolean().default(false),
-  description: z.string().optional(),
-  location: z.string().optional(),
-  calendarId: z.number().min(1, "Calendar selection is required"),
+  calendarId: z.number().int().positive("Calendar selection is required"),
   recurrence: z.object({
     frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']).optional(),
-    interval: z.number().min(1).optional(),
-    count: z.number().min(1).optional(),
+    interval: z.number().positive().optional(),
+    count: z.number().positive().optional(),
     until: z.string().optional(),
     byDay: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).optional(),
   }).optional(),

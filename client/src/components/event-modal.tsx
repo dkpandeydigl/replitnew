@@ -32,7 +32,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const form = useForm({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: event || {
+    defaultValues: {
       title: '',
       description: '',
       location: '',
@@ -43,6 +43,22 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       recurrence: null
     }
   });
+
+  // Populate form when event is selected
+  useEffect(() => {
+    if (event) {
+      form.reset({
+        title: event.title,
+        description: event.description || '',
+        location: event.location || '',
+        start: new Date(event.start).toISOString().slice(0, 16),
+        end: new Date(event.end).toISOString().slice(0, 16),
+        allDay: event.allDay,
+        calendarId: event.calendarId,
+        recurrence: event.recurrence || null
+      });
+    }
+  }, [event, form]);
 
   const onSubmit = async (data: EventFormData) => {
     try {

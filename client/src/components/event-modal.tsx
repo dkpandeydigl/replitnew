@@ -32,18 +32,20 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: event?.title || '',
-      start: event?.start ? new Date(event.start).toISOString().split('.')[0] : new Date().toISOString().split('.')[0],
-      end: event?.end ? new Date(event.end).toISOString().split('.')[0] : new Date().toISOString().split('.')[0],
-      allDay: event?.allDay || false,
-      description: event?.description || '',
-      location: event?.location || '',
-      calendarId: event?.calendarId || calendars[0]?.id,
+      title: '',
+      start: new Date().toISOString().split('.')[0],
+      end: new Date(Date.now() + 3600000).toISOString().split('.')[0],
+      allDay: false,
+      description: '',
+      location: '',
+      calendarId: calendars[0]?.id,
+      recurrence: undefined
     },
   });
 
   useEffect(() => {
     if (event) {
+      const metadata = event.metadata as Record<string, any> || {};
       form.reset({
         title: event.title,
         start: new Date(event.start).toISOString().split('.')[0],
@@ -52,6 +54,13 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         description: event.description || '',
         location: event.location || '',
         calendarId: event.calendarId,
+        recurrence: metadata.recurrence ? {
+          frequency: metadata.recurrence.frequency,
+          interval: metadata.recurrence.interval,
+          count: metadata.recurrence.count,
+          until: metadata.recurrence.until,
+          byDay: metadata.recurrence.byDay
+        } : undefined
       });
     }
   }, [event, form.reset]);

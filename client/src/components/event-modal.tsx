@@ -45,9 +45,9 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   useEffect(() => {
     if (event) {
-      const metadata = event.metadata as Record<string, any> || {};
-      const startDate = typeof event.start === 'string' ? new Date(event.start) : event.start;
-      const endDate = typeof event.end === 'string' ? new Date(event.end) : event.end;
+      const startDate = new Date(event.start);
+      const endDate = new Date(event.end);
+      const recurrenceData = event.recurrence || event.metadata?.recurrence;
       
       form.reset({
         title: event.title,
@@ -57,16 +57,18 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         description: event.description || '',
         location: event.location || '',
         calendarId: event.calendarId,
-        recurrence: metadata.recurrence ? {
-          frequency: metadata.recurrence.frequency,
-          interval: metadata.recurrence.interval,
-          count: metadata.recurrence.count,
-          until: metadata.recurrence.until,
-          byDay: metadata.recurrence.byDay
+        recurrence: recurrenceData ? {
+          frequency: recurrenceData.frequency,
+          interval: recurrenceData.interval || 1,
+          count: recurrenceData.count,
+          until: recurrenceData.until,
+          byDay: recurrenceData.byDay || []
         } : undefined
       });
+    } else {
+      form.reset(form.formState.defaultValues!);
     }
-  }, [event, form.reset]);
+  }, [event, form]);
 
   const onSubmit = (data: EventFormData) => {
     createEventMutation.mutate(data, {

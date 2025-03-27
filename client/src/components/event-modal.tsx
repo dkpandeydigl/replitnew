@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
+  const isEditMode = Boolean(event);
 
   const defaultValues = {
     title: '',
@@ -89,7 +90,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            {event ? 'Update Event' : 'Create Event'}
+            {isEditMode ? 'Update Event' : 'Create Event'}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -221,7 +222,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
               >
                 {createEventMutation.isPending ? "Creating..." : 
                  updateEventMutation.isPending ? "Updating..." : 
-                 event ? "Update Event" : "Create Event"}
+                 isEditMode ? "Update Event" : "Create Event"}
               </Button>
             </DialogFooter>
           </form>

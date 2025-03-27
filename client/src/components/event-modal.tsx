@@ -24,8 +24,6 @@ import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Switch } from './ui/switch';
-import { Label } from './ui/label';
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
@@ -34,23 +32,27 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
     title: '',
     description: '',
     location: '',
-    start: selectedDate?.toISOString().slice(0, 16) || '',
-    end: selectedDate?.toISOString().slice(0, 16) || '',
+    start: selectedDate?.toISOString().slice(0, 16) || new Date().toISOString().slice(0, 16),
+    end: selectedDate?.toISOString().slice(0, 16) || new Date().toISOString().slice(0, 16),
     allDay: false,
-    calendarId: calendars[0]?.id,
+    calendarId: calendars[0]?.id || '',
     recurrence: null
   };
 
-  const form = useForm({
+  const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues
   });
 
-  // Populate form when event changes
   useEffect(() => {
-    if (event) {
+    if (!isOpen) {
+      form.reset(defaultValues);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (event && isOpen) {
       form.reset({
-        ...defaultValues,
         title: event.title,
         description: event.description || '',
         location: event.location || '',
@@ -58,10 +60,10 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         end: new Date(event.end).toISOString().slice(0, 16),
         allDay: event.allDay,
         calendarId: event.calendarId,
-        recurrence: event.recurrence || null
+        recurrence: event.recurrence
       });
     }
-  }, [event, form]);
+  }, [event, isOpen]);
 
   const handleClose = () => {
     form.reset(defaultValues);
@@ -136,45 +138,18 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
               />
             </div>
 
-            <div className="flex items-center gap-4">
-              <FormField
-                control={form.control}
-                name="calendarId"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <Select
-                      value={field.value?.toString() || ''}
-                      onValueChange={(value) => field.onChange(Number(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a calendar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {calendars.map((calendar) => (
-                          <SelectItem key={calendar.id} value={calendar.id.toString()}>
-                            {calendar.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="location"
+              name="allDay"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
+                <FormItem className="flex items-center gap-2">
                   <FormControl>
-                    <div className="relative">
-                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Add location" className="pl-8" {...field} />
-                    </div>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
+                  <FormLabel>All Day</FormLabel>
                   <FormMessage />
                 </FormItem>
               )}
@@ -187,11 +162,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Event description"
-                      className="resize-none"
-                      {...field}
-                    />
+                    <Textarea placeholder="Add description" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -200,71 +171,52 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
             <FormField
               control={form.control}
-              name="allDay"
+              name="location"
               render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Add location" {...field} />
+                    </div>
                   </FormControl>
-                  <FormLabel className="!mt-0">All day event</FormLabel>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
-        <div className="space-y-4 mt-4">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="recurrence"
-              checked={form.watch('recurrence') !== null}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  form.setValue('recurrence', { frequency: 'DAILY' });
-                } else {
-                  form.setValue('recurrence', null);
-                }
-              }}
-            />
-            <Label htmlFor="recurrence">Repeat event</Label>
-          </div>
-
-          {form.watch('recurrence') && (
-            <div className="space-y-4 pl-4">
-              <FormField
-                control={form.control}
-                name="recurrence.frequency"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
+            <FormField
+              control={form.control}
+              name="calendarId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calendar</FormLabel>
+                  <Select value={field.value?.toString()} onValueChange={field.onChange}>
+                    <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
+                        <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DAILY">Daily</SelectItem>
-                        <SelectItem value="WEEKLY">Weekly</SelectItem>
-                        <SelectItem value="MONTHLY">Monthly</SelectItem>
-                        <SelectItem value="YEARLY">Yearly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
-        </div>
+                    </FormControl>
+                    <SelectContent>
+                      {calendars.map((calendar) => (
+                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
+                          {calendar.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={onClose}>
+              <Button variant="outline" type="button" onClick={handleClose}>
                 Cancel
               </Button>
               <Button 
                 type="submit" 
-                variant={event ? "default" : "primary"}
                 disabled={createEventMutation.isPending || updateEventMutation.isPending}
               >
                 {createEventMutation.isPending ? "Creating..." : 

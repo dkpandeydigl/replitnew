@@ -79,7 +79,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            {event ? 'Edit Event' : 'Create Event'}
+            {event ? 'Update Event' : 'Create Event'}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>

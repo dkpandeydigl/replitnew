@@ -25,7 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from '@/components/ui/textarea';
 import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
-import {useEffect} from 'react';
+import { useEffect } from 'react';
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
@@ -33,42 +33,16 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      location: '',
-      start: selectedDate?.toISOString().slice(0, 16) || '',
-      end: selectedDate?.toISOString().slice(0, 16) || '',
-      allDay: false,
-      calendarId: calendars[0]?.id || '',
-      recurrence: null
+      title: event?.title || '',
+      description: event?.description || '',
+      location: event?.location || '',
+      start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
+      end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
+      allDay: event?.allDay || false,
+      calendarId: event?.calendarId || calendars[0]?.id || '',
+      recurrence: event?.recurrence || null
     }
   });
-
-  useEffect(() => {
-    if (event) {
-      form.reset({
-        title: event.title || '',
-        description: event.description || '',
-        location: event.location || '',
-        start: event.start ? new Date(event.start).toISOString().slice(0, 16) : '',
-        end: event.end ? new Date(event.end).toISOString().slice(0, 16) : '',
-        allDay: event.allDay || false,
-        calendarId: event.calendarId,
-        recurrence: event.recurrence || null
-      });
-    } else {
-      form.reset({
-        title: '',
-        description: '',
-        location: '',
-        start: selectedDate?.toISOString().slice(0, 16) || '',
-        end: selectedDate?.toISOString().slice(0, 16) || '',
-        allDay: false,
-        calendarId: calendars[0]?.id || '',
-        recurrence: null
-      });
-    }
-  }, [event, selectedDate, calendars]);
 
   const onSubmit = async (data: EventFormData) => {
     try {
@@ -87,7 +61,6 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         await createEventMutation.mutateAsync(formattedData);
       }
       onClose();
-      form.reset();
     } catch (error) {
       console.error('Failed to save event:', error);
     }
@@ -137,9 +110,9 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Add location" {...field} />
+                    <div className="relative">
+                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input className="pl-8" placeholder="Add location" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -178,15 +151,16 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
               control={form.control}
               name="allDay"
               render={({ field }) => (
-                <FormItem className="flex items-center gap-2">
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
-                    <Checkbox 
-                      checked={field.value} 
+                    <Checkbox
+                      checked={field.value}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel className="!mt-0">All day</FormLabel>
-                  <FormMessage />
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>All day</FormLabel>
+                  </div>
                 </FormItem>
               )}
             />
@@ -215,9 +189,6 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
               )}
             />
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={onClose}>
-                Cancel
-              </Button>
               <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending}>
                 {createEventMutation.isPending ? "Creating..." : 
                  updateEventMutation.isPending ? "Updating..." : 

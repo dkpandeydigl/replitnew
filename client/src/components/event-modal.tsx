@@ -254,8 +254,14 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending}>
-                {(createEventMutation.isPending || updateEventMutation.isPending) ? "Saving..." : (event ? "Update Event" : "Create Event")}
+              <Button 
+                type="submit" 
+                variant={event ? "default" : "primary"}
+                disabled={createEventMutation.isPending || updateEventMutation.isPending}
+              >
+                {createEventMutation.isPending ? "Creating..." : 
+                 updateEventMutation.isPending ? "Updating..." : 
+                 event ? "Update Event" : "Create Event"}
               </Button>
             </DialogFooter>
           </form>

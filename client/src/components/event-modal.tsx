@@ -36,6 +36,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const { createEventMutation, calendars } = useCalDAV();
   const [error, setError] = useState<string | null>(null);
   const [showRecurrence, setShowRecurrence] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -81,14 +82,18 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   }, [event, form]);
 
   const onSubmit = (data: EventFormData) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     createEventMutation.mutate(data, {
       onSuccess: () => {
         onClose();
         form.reset();
         setError(null);
+        setIsSubmitting(false);
       },
       onError: (err) => {
         setError(err.message);
+        setIsSubmitting(false);
       }
     });
   };

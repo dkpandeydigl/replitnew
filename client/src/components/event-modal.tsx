@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Calendar } from 'lucide-react';
+import { useEffect } from 'react';
+import { Calendar, MapPin } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EventFormData, eventFormSchema, type Event } from '@shared/schema';
@@ -22,117 +22,47 @@ import {
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MapPin } from 'lucide-react';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-interface EventModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  event?: Event;
-}
+export function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
+  const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
-export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { createEventMutation, calendars } = useCalDAV();
-  const [error, setError] = useState<string | null>(null);
-  const [showRecurrence, setShowRecurrence] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<EventFormData>({
+  const form = useForm({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
+    defaultValues: event || {
       title: '',
-      start: new Date().toISOString().slice(0, 16),
-      end: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
-      allDay: false,
       description: '',
       location: '',
-      calendarId: calendars[0]?.id || 0,
-      recurrence: undefined
-    },
+      start: selectedDate?.toISOString().slice(0, 16) || '',
+      end: selectedDate?.toISOString().slice(0, 16) || '',
+      allDay: false,
+      calendarId: calendars[0]?.id
+    }
   });
 
-  useEffect(() => {
-    if (event) {
-      const startDate = new Date(event.start);
-      const endDate = new Date(event.end);
-      const recurrenceData = event.recurrence || event.metadata?.recurrence;
-
-      const formData = {
-        title: event.title,
-        start: startDate.toISOString().slice(0, 16),
-        end: endDate.toISOString().slice(0, 16),
-        allDay: event.allDay,
-        description: event.description || '',
-        location: event.location || '',
-        calendarId: event.calendarId,
-        recurrence: recurrenceData ? {
-          frequency: recurrenceData.frequency,
-          interval: recurrenceData.interval || 1,
-          count: recurrenceData.count,
-          until: recurrenceData.until,
-          byDay: recurrenceData.byDay || []
-        } : undefined
-      };
-
-      form.reset(formData);
-    } else {
-      form.reset(form.formState.defaultValues!);
-    }
-  }, [event, form]);
-
-  const onSubmit = (data: EventFormData) => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    
-    if (event) {
-      // Update existing event
-      updateEventMutation.mutate(
-        { id: event.id, data },
-        {
-          onSuccess: () => {
-            onClose();
-            form.reset();
-            setError(null);
-            setIsSubmitting(false);
-          },
-          onError: (err) => {
-            setError(err.message);
-            setIsSubmitting(false);
-          }
-        }
-      );
-    } else {
-      // Create new event
-      createEventMutation.mutate(data, {
-        onSuccess: () => {
-          onClose();
-          form.reset();
-          setError(null);
-          setIsSubmitting(false);
-        },
-        onError: (err) => {
-          setError(err.message);
-          setIsSubmitting(false);
-        }
-      });
+  const onSubmit = async (data: EventFormData) => {
+    try {
+      if (event) {
+        await updateEventMutation.mutateAsync({ id: event.id, ...data });
+      } else {
+        await createEventMutation.mutateAsync(data);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to save event:', error);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             {event ? 'Edit Event' : 'Create Event'}
           </DialogTitle>
         </DialogHeader>
-        {error && (
-          <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md">
-            {error}
-          </div>
-        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -179,182 +109,47 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               />
             </div>
 
+            <div className="flex items-center gap-4">
+              <FormField
+                control={form.control}
+                name="allDay"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="!mt-0">All day event</FormLabel>
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="calendarId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Calendar</FormLabel>
-                    <FormControl>
-                      <select
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2"
-                        {...field}
-                        value={field.value || calendars[0]?.id}
-                      >
+                  <FormItem className="flex-1">
+                    <Select
+                      value={field.value?.toString() || ''}
+                      onValueChange={(value) => field.onChange(Number(value))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a calendar" />
+                      </SelectTrigger>
+                      <SelectContent>
                         {calendars.map((calendar) => (
-                          <option key={calendar.id} value={calendar.id}>
+                          <SelectItem key={calendar.id} value={calendar.id.toString()}>
                             {calendar.name}
-                          </option>
+                          </SelectItem>
                         ))}
-                      </select>
-                    </FormControl>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Event description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowRecurrence(!showRecurrence)}
-                className="w-full justify-start"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mr-2 h-4 w-4"
-                >
-                  <path d="M17 2.1l4 4-4 4" />
-                  <path d="M3 12.2v-2a4 4 0 0 1 4-4h12.8M7 21.9l-4-4 4-4" />
-                  <path d="M21 11.8v2a4 4 0 0 1-4 4H4.2" />
-                </svg>
-                Recurrence
-              </Button>
-
-              {showRecurrence && (
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="recurrence.frequency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Frequency</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="DAILY">Daily</SelectItem>
-                            <SelectItem value="WEEKLY">Weekly</SelectItem>
-                            <SelectItem value="MONTHLY">Monthly</SelectItem>
-                            <SelectItem value="YEARLY">Yearly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="recurrence.interval"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Interval</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="Every X days/weeks/months/years"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="recurrence.count"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of occurrences</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="How many times to repeat"
-                            {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="recurrence.until"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Until date</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            {...field}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
             </div>
 
             <FormField
@@ -370,87 +165,31 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="calendarId"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Calendar</FormLabel>
-                  <Select
-                    value={field.value?.toString() || ''}
-                    onValueChange={(value) => field.onChange(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a calendar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {calendars.map((calendar) => (
-                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
-                          {calendar.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Event description"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Add description..." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Add location" className="pl-8" {...field} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="allDay"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2 pt-2">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="!mt-0">All day event</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createEventMutation.isPending}>
-                {createEventMutation.isPending ? "Creating..." : (event ? "Update Event" : "Create Event")}
+              <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending}>
+                {(createEventMutation.isPending || updateEventMutation.isPending) ? "Saving..." : (event ? "Update Event" : "Create Event")}
               </Button>
             </DialogFooter>
           </form>

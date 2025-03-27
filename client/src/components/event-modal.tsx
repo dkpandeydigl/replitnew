@@ -1,28 +1,11 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar } from "lucide-react";
-import { useForm } from "react-hook-form";
-import type { Event } from "@shared/schema";
-import { eventFormSchema } from "@shared/schema";
-import type { EventFormData } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { eventFormSchema, type EventFormData, type Event } from "@/shared/schema";
 import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
 import { useEffect } from 'react';
@@ -30,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
-
+  
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
@@ -41,26 +24,34 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || calendars[0]?.id || 1,
-      recurrence: event?.recurrence || null
+      recurrence: event?.recurrence ? { frequency: event.recurrence } : undefined
     }
   });
 
+  useEffect(() => {
+    if (isOpen && event) {
+      form.reset({
+        title: event.title,
+        description: event.description || '',
+        location: event.location || '',
+        start: new Date(event.start).toISOString().slice(0, 16),
+        end: new Date(event.end).toISOString().slice(0, 16),
+        allDay: event.allDay,
+        calendarId: event.calendarId,
+        recurrence: event.recurrence ? { frequency: event.recurrence } : undefined
+      });
+    }
+  }, [isOpen, event]);
+
   const onSubmit = async (data: EventFormData) => {
     try {
-      const formattedData = {
-        ...data,
-        calendarId: Number(data.calendarId),
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString()
-      };
-
-      if (event?.id) {
+      if (event) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...formattedData
+          ...data
         });
       } else {
-        await createEventMutation.mutateAsync(formattedData);
+        await createEventMutation.mutateAsync(data);
       }
       onClose();
     } catch (error) {
@@ -69,14 +60,12 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            {event ? 'Update Event' : 'Create Event'}
-          </DialogTitle>
+          <DialogTitle>{event ? 'Update Event' : 'Create Event'}</DialogTitle>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -92,35 +81,32 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
-              name="description"
+              name="calendarId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Add description" {...field} />
-                  </FormControl>
+                  <FormLabel>Calendar</FormLabel>
+                  <Select value={field.value.toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a calendar" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {calendars.map((calendar) => (
+                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
+                          {calendar.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-8" placeholder="Add location" {...field} />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -135,6 +121,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="end"
@@ -149,47 +136,38 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
-              name="allDay"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>All day</FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="calendarId"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Calendar</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <select
-                      className="w-full rounded-md border border-input bg-background px-3 py-2"
-                      {...field}
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    >
-                      {calendars.map((calendar) => (
-                        <option key={calendar.id} value={calendar.id}>
-                          {calendar.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input className="pl-8" {...field} />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="recurrence"
@@ -197,12 +175,12 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 <FormItem>
                   <FormLabel>Recurrence</FormLabel>
                   <Select
-                    value={field.value?.frequency || ''}
+                    value={field.value?.frequency || "none"}
                     onValueChange={(value) => {
-                      if (value) {
-                        field.onChange({ frequency: value });
+                      if (value === "none") {
+                        field.onChange(undefined);
                       } else {
-                        field.onChange(null);
+                        field.onChange({ frequency: value });
                       }
                     }}
                   >
@@ -212,7 +190,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No repeat</SelectItem>
+                      <SelectItem value="none">No repeat</SelectItem>
                       <SelectItem value="DAILY">Daily</SelectItem>
                       <SelectItem value="WEEKLY">Weekly</SelectItem>
                       <SelectItem value="MONTHLY">Monthly</SelectItem>
@@ -223,11 +201,11 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 </FormItem>
               )}
             />
+
             <DialogFooter>
               <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending}>
-                {createEventMutation.isPending ? "Creating..." : 
-                 updateEventMutation.isPending ? "Updating..." : 
-                 event ? "Update Event" : "Create Event"}
+                {event ? (updateEventMutation.isPending ? "Updating..." : "Update Event") : 
+                        (createEventMutation.isPending ? "Creating..." : "Create Event")}
               </Button>
             </DialogFooter>
           </form>

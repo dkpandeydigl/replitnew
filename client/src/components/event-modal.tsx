@@ -39,7 +39,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || calendars[0]?.id || '',
+      calendarId: event?.calendarId || calendars[0]?.id || 0,
       recurrence: event?.recurrence || null
     }
   });
@@ -48,6 +48,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
     try {
       const formattedData = {
         ...data,
+        calendarId: Number(data.calendarId),
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString()
       };

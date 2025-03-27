@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { eventFormSchema, type Event } from "../../shared/schema";
+import { eventFormSchema, type Event } from "@shared/schema";
 import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
 import { useEffect } from 'react';
@@ -23,7 +23,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || calendars[0]?.id || 1,
-      recurrence: event?.recurrence || undefined
+      recurrence: event?.recurrence ? { frequency: event.recurrence } : undefined
     }
   });
 

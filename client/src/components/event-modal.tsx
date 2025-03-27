@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { Calendar, MapPin } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -25,6 +24,7 @@ import { Button } from './ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Switch, Label } from './ui/switch';
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
@@ -38,7 +38,8 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       start: selectedDate?.toISOString().slice(0, 16) || '',
       end: selectedDate?.toISOString().slice(0, 16) || '',
       allDay: false,
-      calendarId: calendars[0]?.id
+      calendarId: calendars[0]?.id,
+      recurrence: null
     }
   });
 
@@ -187,6 +188,50 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 </FormItem>
               )}
             />
+
+        <div className="space-y-4 mt-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="recurrence"
+              checked={form.watch('recurrence') !== null}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  form.setValue('recurrence', { frequency: 'DAILY' });
+                } else {
+                  form.setValue('recurrence', null);
+                }
+              }}
+            />
+            <Label htmlFor="recurrence">Repeat event</Label>
+          </div>
+
+          {form.watch('recurrence') && (
+            <div className="space-y-4 pl-4">
+              <FormField
+                control={form.control}
+                name="recurrence.frequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DAILY">Daily</SelectItem>
+                        <SelectItem value="WEEKLY">Weekly</SelectItem>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                        <SelectItem value="YEARLY">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+        </div>
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>

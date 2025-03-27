@@ -215,8 +215,48 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input type="datetime-local" />
-                  <Input type="datetime-local" />
+                  <div className="space-y-2">
+                    <label>Start</label>
+                    <div className="flex gap-2">
+                      <Input 
+                        type="date" 
+                        value={form.watch('start').split('T')[0]}
+                        onChange={(e) => {
+                          const time = form.watch('start').split('T')[1] || '00:00';
+                          form.setValue('start', `${e.target.value}T${time}`);
+                        }}
+                      />
+                      <Input 
+                        type="time"
+                        value={form.watch('start').split('T')[1] || ''}
+                        onChange={(e) => {
+                          const date = form.watch('start').split('T')[0];
+                          form.setValue('start', `${date}T${e.target.value}`);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label>End</label>
+                    <div className="flex gap-2">
+                      <Input 
+                        type="date"
+                        value={form.watch('end').split('T')[0]}
+                        onChange={(e) => {
+                          const time = form.watch('end').split('T')[1] || '00:00';
+                          form.setValue('end', `${e.target.value}T${time}`);
+                        }}
+                      />
+                      <Input 
+                        type="time"
+                        value={form.watch('end').split('T')[1] || ''}
+                        onChange={(e) => {
+                          const date = form.watch('end').split('T')[0];
+                          form.setValue('end', `${date}T${e.target.value}`);
+                        }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

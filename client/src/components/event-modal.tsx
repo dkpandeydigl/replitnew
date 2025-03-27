@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
 import { useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
@@ -39,7 +40,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || calendars[0]?.id || 0,
+      calendarId: event?.calendarId || calendars[0]?.id || 1,
       recurrence: event?.recurrence || null
     }
   });
@@ -185,6 +186,39 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                       ))}
                     </select>
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="recurrence"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recurrence</FormLabel>
+                  <Select
+                    value={field.value?.frequency || ''}
+                    onValueChange={(value) => {
+                      if (value) {
+                        field.onChange({ frequency: value });
+                      } else {
+                        field.onChange(null);
+                      }
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="No repeat" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">No repeat</SelectItem>
+                      <SelectItem value="DAILY">Daily</SelectItem>
+                      <SelectItem value="WEEKLY">Weekly</SelectItem>
+                      <SelectItem value="MONTHLY">Monthly</SelectItem>
+                      <SelectItem value="YEARLY">Yearly</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

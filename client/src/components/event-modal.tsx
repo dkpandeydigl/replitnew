@@ -15,9 +15,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Users, MapPin, Clock } from 'lucide-react';
+import { Calendar, Users, MapPin, Clock, RepeatIcon } from 'lucide-react';
 import { eventFormSchema, type EventFormData } from '@shared/schema';
 import { Checkbox } from './ui/checkbox';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -177,6 +179,180 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                     </SelectContent>
                   </Select>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="recurrence"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" type="button" className="w-full flex justify-between">
+                        <span className="flex items-center gap-2">
+                          <RepeatIcon className="h-4 w-4" />
+                          Recurrence
+                        </span>
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 mt-4">
+                      <RadioGroup
+                        value={field.value?.frequency || ''}
+                        onValueChange={(value) => {
+                          if (!value) {
+                            field.onChange(undefined);
+                          } else {
+                            field.onChange({
+                              ...field.value,
+                              frequency: value as any,
+                              interval: field.value?.interval || 1
+                            });
+                          }
+                        }}
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Does not repeat</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="DAILY" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Daily</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="WEEKLY" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Weekly</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="MONTHLY" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Monthly</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="YEARLY" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Yearly</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+
+                      {field.value?.frequency && (
+                        <div className="space-y-4">
+                          <FormItem>
+                            <FormLabel>Repeat every</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={field.value.interval || 1}
+                                onChange={(e) => {
+                                  field.onChange({
+                                    ...field.value,
+                                    interval: parseInt(e.target.value) || 1
+                                  });
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+
+                          {field.value.frequency === 'WEEKLY' && (
+                            <FormItem>
+                              <FormLabel>Repeat on</FormLabel>
+                              <div className="flex gap-2 flex-wrap">
+                                {['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'].map((day) => (
+                                  <Button
+                                    key={day}
+                                    type="button"
+                                    size="sm"
+                                    variant={field.value.byDay?.includes(day) ? 'default' : 'outline'}
+                                    onClick={() => {
+                                      const byDay = field.value.byDay || [];
+                                      field.onChange({
+                                        ...field.value,
+                                        byDay: byDay.includes(day)
+                                          ? byDay.filter(d => d !== day)
+                                          : [...byDay, day]
+                                      });
+                                    }}
+                                  >
+                                    {day}
+                                  </Button>
+                                ))}
+                              </div>
+                            </FormItem>
+                          )}
+
+                          <FormItem>
+                            <FormLabel>Ends</FormLabel>
+                            <RadioGroup
+                              value={field.value.until ? 'until' : field.value.count ? 'count' : 'never'}
+                              onValueChange={(value) => {
+                                if (value === 'never') {
+                                  field.onChange({
+                                    ...field.value,
+                                    until: undefined,
+                                    count: undefined
+                                  });
+                                }
+                              }}
+                            >
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="never" />
+                                </FormControl>
+                                <FormLabel className="font-normal">Never</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="count" />
+                                </FormControl>
+                                <FormLabel className="font-normal">After</FormLabel>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  className="w-20"
+                                  value={field.value.count || ''}
+                                  onChange={(e) => {
+                                    field.onChange({
+                                      ...field.value,
+                                      count: parseInt(e.target.value) || undefined,
+                                      until: undefined
+                                    });
+                                  }}
+                                />
+                                <FormLabel className="font-normal">occurrences</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem value="until" />
+                                </FormControl>
+                                <FormLabel className="font-normal">On</FormLabel>
+                                <Input
+                                  type="date"
+                                  value={field.value.until?.split('T')[0] || ''}
+                                  onChange={(e) => {
+                                    field.onChange({
+                                      ...field.value,
+                                      until: e.target.value ? new Date(e.target.value).toISOString() : undefined,
+                                      count: undefined
+                                    });
+                                  }}
+                                />
+                              </FormItem>
+                            </RadioGroup>
+                          </FormItem>
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
                 </FormItem>
               )}
             />

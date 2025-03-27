@@ -98,6 +98,13 @@ export const eventFormSchema = z.object({
   description: z.string().optional(),
   location: z.string().optional(),
   calendarId: z.number().min(1, "Calendar selection is required"),
+  recurrence: z.object({
+    frequency: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']).optional(),
+    interval: z.number().min(1).optional(),
+    count: z.number().min(1).optional(),
+    until: z.string().optional(),
+    byDay: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).optional(),
+  }).optional(),
 });
 
 export type InsertEvent = z.infer<typeof insertEventSchema>;

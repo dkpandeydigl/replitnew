@@ -631,8 +631,27 @@ SUMMARY:${event.title}`;
       icsData += `\nLOCATION:${event.location}`;
     }
 
-    if (event.recurrence) {
-      icsData += `\nRRULE:${event.recurrence}`;
+    if (event.recurrence?.frequency) {
+      let rrule = `FREQ=${event.recurrence.frequency}`;
+      
+      if (event.recurrence.interval && event.recurrence.interval > 1) {
+        rrule += `;INTERVAL=${event.recurrence.interval}`;
+      }
+      
+      if (event.recurrence.count) {
+        rrule += `;COUNT=${event.recurrence.count}`;
+      }
+      
+      if (event.recurrence.until) {
+        const untilDate = new Date(event.recurrence.until);
+        rrule += `;UNTIL=${untilDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
+      }
+      
+      if (event.recurrence.byDay && event.recurrence.byDay.length > 0) {
+        rrule += `;BYDAY=${event.recurrence.byDay.join(',')}`;
+      }
+      
+      icsData += `\nRRULE:${rrule}`;
     }
 
     icsData += `\nEND:VEVENT

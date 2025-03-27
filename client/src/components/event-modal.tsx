@@ -73,10 +73,19 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      if (event) {
-        await updateEventMutation.mutateAsync({ id: event.id, ...data });
+      if (event?.id) {
+        await updateEventMutation.mutateAsync({
+          id: event.id,
+          ...data,
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString()
+        });
       } else {
-        await createEventMutation.mutateAsync(data);
+        await createEventMutation.mutateAsync({
+          ...data,
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString()
+        });
       }
       handleClose();
     } catch (error) {

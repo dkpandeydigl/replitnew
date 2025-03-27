@@ -32,16 +32,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: event ? {
-      title: event.title,
-      description: event.description || '',
-      location: event.location || '',
-      start: new Date(event.start).toISOString().slice(0, 16),
-      end: new Date(event.end).toISOString().slice(0, 16),
-      allDay: event.allDay,
-      calendarId: event.calendarId,
-      recurrence: event.recurrence
-    } : {
+    defaultValues: {
       title: '',
       description: '',
       location: '',
@@ -56,14 +47,14 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
   useEffect(() => {
     if (event) {
       form.reset({
-        title: event.title,
+        title: event.title || '',
         description: event.description || '',
         location: event.location || '',
-        start: new Date(event.start).toISOString().slice(0, 16),
-        end: new Date(event.end).toISOString().slice(0, 16),
-        allDay: event.allDay,
+        start: event.start ? new Date(event.start).toISOString().slice(0, 16) : '',
+        end: event.end ? new Date(event.end).toISOString().slice(0, 16) : '',
+        allDay: event.allDay || false,
         calendarId: event.calendarId,
-        recurrence: event.recurrence
+        recurrence: event.recurrence || null
       });
     } else {
       form.reset({
@@ -77,26 +68,26 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         recurrence: null
       });
     }
-  }, [event, selectedDate, calendars, form]);
+  }, [event, selectedDate, calendars]);
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      if (event) {
+      const formattedData = {
+        ...data,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString()
+      };
+
+      if (event?.id) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...data,
-          start: new Date(data.start).toISOString(),
-          end: new Date(data.end).toISOString()
+          ...formattedData
         });
       } else {
-        await createEventMutation.mutateAsync({
-          ...data,
-          start: new Date(data.start).toISOString(),
-          end: new Date(data.end).toISOString()
-        });
+        await createEventMutation.mutateAsync(formattedData);
       }
-      form.reset();
       onClose();
+      form.reset();
     } catch (error) {
       console.error('Failed to save event:', error);
     }

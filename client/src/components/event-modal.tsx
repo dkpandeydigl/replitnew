@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { Calendar, MapPin } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -25,7 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from './ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
-export function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
+export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
   const form = useForm({
@@ -112,22 +113,6 @@ export function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boo
             <div className="flex items-center gap-4">
               <FormField
                 control={form.control}
-                name="allDay"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="!mt-0">All day event</FormLabel>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="calendarId"
                 render={({ field }) => (
                   <FormItem className="flex-1">
@@ -159,7 +144,10 @@ export function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boo
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input placeholder="Event location" {...field} />
+                    <div className="relative">
+                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Add location" className="pl-8" {...field} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -180,6 +168,22 @@ export function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boo
                     />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="allDay"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="!mt-0">All day event</FormLabel>
                 </FormItem>
               )}
             />

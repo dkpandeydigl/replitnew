@@ -46,10 +46,13 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   useEffect(() => {
     if (event) {
       const metadata = event.metadata as Record<string, any> || {};
+      const startDate = typeof event.start === 'string' ? new Date(event.start) : event.start;
+      const endDate = typeof event.end === 'string' ? new Date(event.end) : event.end;
+      
       form.reset({
         title: event.title,
-        start: new Date(event.start).toISOString().split('.')[0],
-        end: new Date(event.end).toISOString().split('.')[0],
+        start: startDate.toISOString().split('.')[0],
+        end: endDate.toISOString().split('.')[0],
         allDay: event.allDay,
         description: event.description || '',
         location: event.location || '',

@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select,
   SelectContent,
@@ -28,130 +27,58 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar, Trash2 } from 'lucide-react';
-import { eventFormSchema, Event } from '@shared/schema';
+import { Calendar } from 'lucide-react';
+import { eventFormSchema } from '@shared/schema';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: Event | any;
+  event?: any;
 }
 
 export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { 
-    calendars, 
-    createEventMutation, 
-    updateEventMutation, 
-    deleteEventMutation 
-  } = useCalDAV();
-  
-  const [isEditMode, setIsEditMode] = useState(false);
-  
-  const form = useForm<z.infer<typeof eventFormSchema>>({
-    resolver: zodResolver(eventFormSchema),
+  const { calendars, createEventMutation } = useCalDAV();
+  const [recurrenceType, setRecurrenceType] = useState('none');
+
+  const form = useForm({
     defaultValues: {
       title: '',
+      description: '',
       start: '',
       end: '',
-      allDay: false,
-      description: '',
       location: '',
-      calendarId: 0
+      calendarId: calendars[0]?.id || 0,
+      recurrence: {
+        type: 'none',
+        interval: 1,
+        weekday: 'monday',
+        endType: 'never',
+        occurrences: 1,
+        until: ''
+      }
     }
   });
-  
-  // Reset form when event changes
-  useEffect(() => {
-    if (event) {
-      const isExistingEvent = typeof event.id !== 'undefined';
-      setIsEditMode(isExistingEvent);
-      
-      // Format dates for form inputs
-      let startStr = '';
-      let endStr = '';
-      
-      if (event.start instanceof Date) {
-        // Format for datetime-local input: YYYY-MM-DDThh:mm
-        startStr = format(event.start, "yyyy-MM-dd'T'HH:mm");
+
+  const onSubmit = (data: any) => {
+    createEventMutation.mutate(data, {
+      onSuccess: () => {
+        onClose();
       }
-      
-      if (event.end instanceof Date) {
-        endStr = format(event.end, "yyyy-MM-dd'T'HH:mm");
-      }
-      
-      form.reset({
-        title: event.title || '',
-        start: startStr,
-        end: endStr,
-        allDay: event.allDay || false,
-        description: event.description || '',
-        location: event.location || '',
-        calendarId: event.calendarId || calendars[0]?.id || 0
-      });
-    } else {
-      setIsEditMode(false);
-      form.reset({
-        title: '',
-        start: '',
-        end: '',
-        allDay: false,
-        description: '',
-        location: '',
-        calendarId: calendars[0]?.id || 0
-      });
-    }
-  }, [event, form, calendars]);
-  
-  const handleClose = () => {
-    form.reset();
-    onClose();
+    });
   };
-  
-  const onSubmit = (data: z.infer<typeof eventFormSchema>) => {
-    if (isEditMode && event?.id) {
-      updateEventMutation.mutate({
-        id: event.id,
-        data
-      }, {
-        onSuccess: () => {
-          handleClose();
-        }
-      });
-    } else {
-      createEventMutation.mutate(data, {
-        onSuccess: () => {
-          handleClose();
-        }
-      });
-    }
-  };
-  
-  const handleDelete = () => {
-    if (event?.id) {
-      deleteEventMutation.mutate(event.id, {
-        onSuccess: () => {
-          handleClose();
-        }
-      });
-    }
-  };
-  
-  const isPending = createEventMutation.isPending || 
-                    updateEventMutation.isPending || 
-                    deleteEventMutation.isPending;
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            {isEditMode ? 'Edit Event' : 'Add Event'}
+            Create Meeting
           </DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -159,86 +86,14 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Subject</FormLabel>
                   <FormControl>
-                    <Input placeholder="Event title" {...field} />
+                    <Input placeholder="Meeting subject" {...field} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="datetime-local"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="datetime-local"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="calendarId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Calendar</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(parseInt(value))}
-                    defaultValue={field.value?.toString()}
-                    value={field.value?.toString()}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a calendar" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {calendars.map((calendar) => (
-                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
-                          <div className="flex items-center">
-                            <span 
-                              className="w-3 h-3 rounded-full mr-2"
-                              style={{ backgroundColor: calendar.color }}
-                            />
-                            {calendar.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -246,85 +101,89 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Event description"
-                      {...field}
-                      value={field.value || ''}
-                    />
+                    <Textarea rows={4} {...field} />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Event location"
-                      {...field}
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="allDay"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-1">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>All day event</FormLabel>
+
+            <div className="space-y-4 border rounded-lg p-4">
+              <h3 className="font-medium">Repeat event</h3>
+              <RadioGroup 
+                value={recurrenceType}
+                onValueChange={setRecurrenceType}
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="none" id="none" />
+                  <label htmlFor="none">No repeat</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="daily" id="daily" />
+                  <label htmlFor="daily">Daily</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="weekly" id="weekly" />
+                  <label htmlFor="weekly">Weekly</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="monthly" id="monthly" />
+                  <label htmlFor="monthly">Monthly</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yearly" id="yearly" />
+                  <label htmlFor="yearly">Yearly</label>
+                </div>
+              </RadioGroup>
+
+              {recurrenceType !== 'none' && (
+                <div className="space-y-4 mt-4">
+                  <div className="flex items-center gap-2">
+                    <Input type="number" className="w-20" min="1" defaultValue="1" />
+                    <Select defaultValue="monday">
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Select day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monday">Monday</SelectItem>
+                        <SelectItem value="tuesday">Tuesday</SelectItem>
+                        <SelectItem value="wednesday">Wednesday</SelectItem>
+                        <SelectItem value="thursday">Thursday</SelectItem>
+                        <SelectItem value="friday">Friday</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </FormItem>
+                </div>
               )}
-            />
-            
-            <DialogFooter className="flex justify-between items-center pt-4">
-              <div>
-                {isEditMode && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={isPending}
-                    className="flex items-center"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                )}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Meeting Time</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <Input type="datetime-local" />
+                <Input type="datetime-local" />
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  disabled={isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                >
-                  {isPending ? 'Saving...' : isEditMode ? 'Update Event' : 'Save Event'}
-                </Button>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-medium">Reminder</h3>
+              <div className="flex items-center gap-2">
+                <span>Before</span>
+                <Input type="number" className="w-20" defaultValue="10" />
+                <span>minutes via</span>
+                <Input type="email" placeholder="Email" className="flex-1" />
+                <span>SMS:</span>
+                <Input type="text" className="w-32" />
               </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Save
+              </Button>
             </DialogFooter>
           </form>
         </Form>

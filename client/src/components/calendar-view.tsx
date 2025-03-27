@@ -135,7 +135,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
       )}
 
       {/* No active calendar message */}
-      {!activeCalendar && !eventsLoading && (
+      {(!activeCalendar || !activeCalendar.id) && !eventsLoading && (
         <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10">
           <div className="text-center max-w-md p-6">
             <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />

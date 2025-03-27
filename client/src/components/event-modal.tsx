@@ -85,7 +85,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -214,10 +214,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label>Start</label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Input 
                         type="date" 
                         value={form.watch('start').split('T')[0]}
@@ -238,7 +238,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                   </div>
                   <div className="space-y-2">
                     <label>End</label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Input 
                         type="date"
                         value={form.watch('end').split('T')[0]}

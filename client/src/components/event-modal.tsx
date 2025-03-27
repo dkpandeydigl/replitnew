@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useCalDAV } from '@/hooks/use-caldav';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,8 +15,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Calendar } from 'lucide-react';
+import { Calendar, Users, MapPin, Clock } from 'lucide-react';
 import { eventFormSchema, type EventFormData } from '@shared/schema';
+import { Checkbox } from './ui/checkbox';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -50,14 +52,13 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
             Create Event
           </DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -67,35 +68,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Event title" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,6 +107,57 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
             <FormField
               control={form.control}
+              name="allDay"
+              render={({ field }) => (
+                <FormItem className="flex items-center space-x-2">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="!mt-0">All day event</FormLabel>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Location
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Add location" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Add description"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="calendarId"
               render={({ field }) => (
                 <FormItem>
@@ -158,6 +182,9 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
             />
 
             <DialogFooter>
+              <Button variant="outline" type="button" onClick={onClose}>
+                Cancel
+              </Button>
               <Button type="submit" disabled={createEventMutation.isPending}>
                 {createEventMutation.isPending ? "Creating..." : "Create Event"}
               </Button>

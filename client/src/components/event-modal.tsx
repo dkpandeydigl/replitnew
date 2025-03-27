@@ -54,7 +54,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -62,7 +62,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="title"
@@ -357,6 +358,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               )}
             />
 
+            </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel

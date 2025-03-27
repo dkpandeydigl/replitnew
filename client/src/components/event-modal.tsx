@@ -33,7 +33,8 @@ interface EventModalProps {
 }
 
 export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { calendars, createEventMutation } = useCalDAV();
+  const { createEventMutation, calendars } = useCalDAV();
+  const [error, setError] = useState<string | null>(null);
   const [showRecurrence, setShowRecurrence] = useState(false);
 
   const form = useForm<EventFormData>({
@@ -84,6 +85,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       onSuccess: () => {
         onClose();
         form.reset();
+        setError(null);
+      },
+      onError: (err) => {
+        setError(err.message);
       }
     });
   };
@@ -97,6 +102,11 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
             {event ? 'Edit Event' : 'Create Event'}
           </DialogTitle>
         </DialogHeader>
+        {error && (
+          <div className="bg-destructive/15 text-destructive px-4 py-2 rounded-md">
+            {error}
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 gap-4">

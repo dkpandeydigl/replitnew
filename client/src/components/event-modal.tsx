@@ -4,28 +4,15 @@ import { useCalDAV } from '@/hooks/use-caldav';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { 
-  Dialog,
-  DialogContent,
-  DialogHeader, 
-  DialogTitle,
-  DialogFooter
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '@/components/ui/dialog';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Search, X } from 'lucide-react';
@@ -85,7 +72,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -93,180 +80,172 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
-          <div className="grid grid-cols-5 gap-4">
-            <div className="col-span-2 space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Attendees</h3>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-6">
+                {/* Attendees */}
+                <div>
+                  <h3 className="font-medium mb-2">Attendees</h3>
+                  <div className="flex gap-2 mb-2">
                     <Input 
-                      placeholder="Search Attendees"
+                      placeholder="Add attendee email"
                       value={newAttendee}
                       onChange={(e) => setNewAttendee(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addAttendee()}
                     />
-                    <Button variant="outline" onClick={addAttendee}>
-                      <Search className="h-4 w-4" />
-                    </Button>
+                    <Button type="button" onClick={addAttendee}>Add</Button>
                   </div>
                   <div className="space-y-2">
                     {attendees.map((email) => (
                       <div key={email} className="flex items-center justify-between bg-secondary p-2 rounded">
                         <span>{email}</span>
-                        <Button variant="ghost" size="sm" onClick={() => removeAttendee(email)}>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => removeAttendee(email)}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <h3 className="font-medium mb-2">Meeting Resources</h3>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Resources" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="projector">Projector</SelectItem>
-                    <SelectItem value="whiteboard">Whiteboard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <h3 className="font-medium mb-2">Venue</h3>
-                <Input placeholder="Enter meeting location" />
-              </div>
-            </div>
-
-            <div className="col-span-3 space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Description</h3>
-                <div className="space-y-2">
-                  <Input placeholder="Subject" />
-                  <Textarea placeholder="Description" className="h-[120px]" />
-                </div>
-              </div>
-
-              <div className="space-y-4 border rounded-lg p-4">
-                <h3 className="font-medium">Repeat event</h3>
-                <RadioGroup 
-                  value={recurrenceType}
-                  onValueChange={setRecurrenceType}
-                  className="space-y-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="none" id="none" />
-                    <label htmlFor="none">No repeat</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="daily" id="daily" />
-                    <label htmlFor="daily">Daily</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="weekly" id="weekly" />
-                    <label htmlFor="weekly">Weekly</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="monthly" />
-                    <label htmlFor="monthly">Monthly</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yearly" id="yearly" />
-                    <label htmlFor="yearly">Yearly</label>
-                  </div>
-                </RadioGroup>
-
-                {recurrenceType !== 'none' && (
-                  <div className="space-y-4 mt-4">
-                    <div className="flex items-center gap-2">
-                      <Input type="number" className="w-20" min="1" defaultValue="1" />
-                      <Select defaultValue="monday">
-                        <SelectTrigger className="w-32">
-                          <SelectValue placeholder="Select day" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="monday">Monday</SelectItem>
-                          <SelectItem value="tuesday">Tuesday</SelectItem>
-                          <SelectItem value="wednesday">Wednesday</SelectItem>
-                          <SelectItem value="thursday">Thursday</SelectItem>
-                          <SelectItem value="friday">Friday</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium">Meeting Time</h3>
-                  <Select defaultValue="Asia/Colombo">
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Select timezone" />
+                {/* Meeting Resources */}
+                <div>
+                  <h3 className="font-medium mb-2">Meeting Resources</h3>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Resources" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Asia/Colombo">(GMT +05:30) Asia/Colombo</SelectItem>
-                      <SelectItem value="UTC">UTC</SelectItem>
+                      <SelectItem value="projector">Projector</SelectItem>
+                      <SelectItem value="whiteboard">Whiteboard</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-4">
+
+                {/* Venue */}
+                <div>
+                  <h3 className="font-medium mb-2">Venue</h3>
+                  <Input placeholder="Enter meeting location" />
+                </div>
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* Description */}
+                <div>
+                  <h3 className="font-medium mb-2">Description</h3>
                   <div className="space-y-2">
-                    <label>Start</label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input 
-                        type="date" 
-                        value={form.watch('start').split('T')[0]}
-                        onChange={(e) => {
-                          const time = form.watch('start').split('T')[1] || '00:00';
-                          form.setValue('start', `${e.target.value}T${time}`);
-                        }}
-                      />
-                      <Input 
-                        type="time"
-                        value={form.watch('start').split('T')[1] || ''}
-                        onChange={(e) => {
-                          const date = form.watch('start').split('T')[0];
-                          form.setValue('start', `${date}T${e.target.value}`);
-                        }}
-                      />
-                    </div>
+                    <Input placeholder="Subject" />
+                    <Textarea placeholder="Description" className="h-[120px]" />
                   </div>
-                  <div className="space-y-2">
-                    <label>End</label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Input 
-                        type="date"
-                        value={form.watch('end').split('T')[0]}
-                        onChange={(e) => {
-                          const time = form.watch('end').split('T')[1] || '00:00';
-                          form.setValue('end', `${e.target.value}T${time}`);
-                        }}
-                      />
-                      <Input 
-                        type="time"
-                        value={form.watch('end').split('T')[1] || ''}
-                        onChange={(e) => {
-                          const date = form.watch('end').split('T')[0];
-                          form.setValue('end', `${date}T${e.target.value}`);
-                        }}
-                      />
+                </div>
+
+                {/* Meeting Time */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium">Meeting Time</h3>
+                    <Select defaultValue="Asia/Colombo">
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Asia/Colombo">(GMT +05:30) Asia/Colombo</SelectItem>
+                        <SelectItem value="UTC">UTC</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block mb-1">Start</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input 
+                          type="date" 
+                          value={form.watch('start').split('T')[0]}
+                          onChange={(e) => {
+                            const time = form.watch('start').split('T')[1] || '00:00';
+                            form.setValue('start', `${e.target.value}T${time}`);
+                          }}
+                        />
+                        <Input 
+                          type="time"
+                          value={form.watch('start').split('T')[1] || ''}
+                          onChange={(e) => {
+                            const date = form.watch('start').split('T')[0];
+                            form.setValue('start', `${date}T${e.target.value}`);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block mb-1">End</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input 
+                          type="date"
+                          value={form.watch('end').split('T')[0]}
+                          onChange={(e) => {
+                            const time = form.watch('end').split('T')[1] || '00:00';
+                            form.setValue('end', `${e.target.value}T${time}`);
+                          }}
+                        />
+                        <Input 
+                          type="time"
+                          value={form.watch('end').split('T')[1] || ''}
+                          onChange={(e) => {
+                            const date = form.watch('end').split('T')[0];
+                            form.setValue('end', `${date}T${e.target.value}`);
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Repeat Event */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-medium mb-2">Repeat event</h3>
+                  <RadioGroup 
+                    value={recurrenceType}
+                    onValueChange={setRecurrenceType}
+                    className="space-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="none" id="none" />
+                      <label htmlFor="none">No repeat</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="daily" id="daily" />
+                      <label htmlFor="daily">Daily</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="weekly" id="weekly" />
+                      <label htmlFor="weekly">Weekly</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="monthly" id="monthly" />
+                      <label htmlFor="monthly">Monthly</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yearly" id="yearly" />
+                      <label htmlFor="yearly">Yearly</label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => form.handleSubmit(onSubmit)()}>Save</Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

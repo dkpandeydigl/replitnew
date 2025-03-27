@@ -84,18 +84,39 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const onSubmit = (data: EventFormData) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    createEventMutation.mutate(data, {
-      onSuccess: () => {
-        onClose();
-        form.reset();
-        setError(null);
-        setIsSubmitting(false);
-      },
-      onError: (err) => {
-        setError(err.message);
-        setIsSubmitting(false);
-      }
-    });
+    
+    if (event) {
+      // Update existing event
+      updateEventMutation.mutate(
+        { id: event.id, data },
+        {
+          onSuccess: () => {
+            onClose();
+            form.reset();
+            setError(null);
+            setIsSubmitting(false);
+          },
+          onError: (err) => {
+            setError(err.message);
+            setIsSubmitting(false);
+          }
+        }
+      );
+    } else {
+      // Create new event
+      createEventMutation.mutate(data, {
+        onSuccess: () => {
+          onClose();
+          form.reset();
+          setError(null);
+          setIsSubmitting(false);
+        },
+        onError: (err) => {
+          setError(err.message);
+          setIsSubmitting(false);
+        }
+      });
+    }
   };
 
   return (

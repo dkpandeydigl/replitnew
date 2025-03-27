@@ -1,10 +1,10 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { eventFormSchema, type Event } from "@/shared/schema";
+import { eventFormSchema, type Event } from "@shared/schema";
 import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
 import { useEffect } from 'react';
@@ -62,7 +62,8 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{event ? 'Update Event' : 'Create Event'}</DialogTitle>
+          <DialogTitle>{event ? 'Edit Event' : 'Create Event'}</DialogTitle>
+          <DialogDescription>Fill in the event details below</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

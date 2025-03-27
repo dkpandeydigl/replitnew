@@ -322,8 +322,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Calendar</FormLabel>
                   <Select
-                    value={field.value.toString()}
-                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    value={field.value?.toString() || ''}
+                    onValueChange={(value) => field.onChange(Number(value))}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a calendar" />

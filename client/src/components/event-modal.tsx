@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCalDAV } from '@/hooks/use-caldav';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -24,7 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: any;
+  event?: Event;
 }
 
 export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
@@ -33,15 +32,29 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      start: new Date().toISOString().slice(0, 16),
-      end: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
-      location: '',
-      calendarId: calendars[0]?.id || 0,
-      allDay: false
-    }
+      title: event?.title || '',
+      start: event?.start?.toISOString().split('.')[0] || new Date().toISOString().split('.')[0],
+      end: event?.end?.toISOString().split('.')[0] || new Date().toISOString().split('.')[0],
+      allDay: event?.allDay || false,
+      description: event?.description || '',
+      location: event?.location || '',
+      calendarId: event?.calendarId || undefined,
+    },
   });
+
+  useEffect(() => {
+    if (event) {
+      form.reset({
+        title: event.title,
+        start: event.start.toISOString().split('.')[0],
+        end: event.end.toISOString().split('.')[0],
+        allDay: event.allDay,
+        description: event.description || '',
+        location: event.location || '',
+        calendarId: event.calendarId,
+      });
+    }
+  }, [event, form.reset]);
 
   const onSubmit = (data: EventFormData) => {
     createEventMutation.mutate(data, {

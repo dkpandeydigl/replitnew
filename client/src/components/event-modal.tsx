@@ -45,11 +45,11 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   useEffect(() => {
     if (event) {
-      const startDate = new Date(event.start);
-      const endDate = new Date(event.end);
+      const startDate = typeof event.start === 'string' ? new Date(event.start) : event.start;
+      const endDate = typeof event.end === 'string' ? new Date(event.end) : event.end;
       const recurrenceData = event.recurrence || event.metadata?.recurrence;
       
-      form.reset({
+      const formData = {
         title: event.title,
         start: startDate.toISOString().split('.')[0],
         end: endDate.toISOString().split('.')[0],
@@ -64,7 +64,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           until: recurrenceData.until,
           byDay: recurrenceData.byDay || []
         } : undefined
-      });
+      };
+      
+      console.log("Setting form data with recurrence:", formData);
+      form.reset(formData);
     } else {
       form.reset(form.formState.defaultValues!);
     }
@@ -216,7 +219,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               name="recurrence"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <Collapsible>
+                  <Collapsible defaultOpen={!!field.value?.frequency}>
                     <CollapsibleTrigger asChild>
                       <Button variant="outline" type="button" className="w-full flex justify-between">
                         <span className="flex items-center gap-2">

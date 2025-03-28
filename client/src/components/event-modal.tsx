@@ -11,11 +11,11 @@ import { eventFormSchema, type EventFormData } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar"; //Added from original
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; //Added from original
-import { cn } from "@/lib/utils"; //Added from original
-import { CalendarIcon } from "lucide-react"; //Added from original
-import { format } from "date-fns"; //Added from original
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 
 
 const RECURRENCE_OPTIONS = [
@@ -58,34 +58,36 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      const formattedData = {
-        title: data.title,
-        description: data.description || null,
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString(),
-        allDay: Boolean(data.allDay),
-        calendarId: Number(data.calendarId),
-        location: data.location || null,
-        recurrence: data.recurrence?.frequency !== 'NONE' ? data.recurrence : null
-      };
-
-      if (event) {
-        await updateEventMutation.mutateAsync({ id: event.id, ...formattedData });
-      } else {
-        await createEventMutation.mutateAsync(formattedData);
+      if (!data.calendarId) {
+        toast({
+          title: "Error",
+          description: "Please select a calendar",
+          variant: "destructive",
+        });
+        return;
       }
 
-      toast({
-        title: "Success",
-        description: `Event ${event ? 'updated' : 'created'} successfully`,
-      });
+      if (event?.id) {
+        await updateEventMutation.mutateAsync({ id: event.id, ...data, start: new Date(data.start), end: new Date(data.end) });
+        toast({
+          title: "Success",
+          description: "Meeting updated successfully",
+        });
+      } else {
+        await createEventMutation.mutateAsync({ ...data, start: new Date(data.start), end: new Date(data.end) });
+        toast({
+          title: "Success",
+          description: "Meeting created successfully",
+        });
+      }
       onClose();
-    } catch (error) {
-      console.error('Failed to save event:', error);
+      form.reset();
+    } catch (error: any) {
+      console.error("Failed to save event:", error);
       toast({
         title: "Error",
-        description: "Failed to save event. Please check all required fields.",
-        variant: "destructive"
+        description: error?.message || "Failed to save meeting. Please try again.",
+        variant: "destructive",
       });
     }
   };

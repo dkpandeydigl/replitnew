@@ -17,9 +17,8 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
   const defaultCalendarId = calendars?.[0]?.id;
-  
+
   const form = useForm<EventFormData>({
-    resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: event?.title || '',
       description: event?.description || '',
@@ -27,7 +26,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || calendars[0]?.id || 1,
+      calendarId: event?.calendarId || defaultCalendarId || undefined,
       recurrence: event?.recurrence ? { frequency: event.recurrence } : undefined
     }
   });
@@ -111,15 +110,15 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
                 <FormItem>
                   <FormLabel>Calendar</FormLabel>
                   <Select 
-                    value={field.value ? field.value.toString() : defaultCalendarId?.toString() || ''} 
-                    onValueChange={(value) => field.onChange(parseInt(value))}>
+                    value={field.value?.toString() || ''} 
+                    onValueChange={(value) => field.onChange(parseInt(value, 10))}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a calendar" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {calendars.map((calendar) => (
+                      {calendars?.map((calendar) => (
                         <SelectItem key={calendar.id} value={calendar.id.toString()}>
                           {calendar.name}
                         </SelectItem>

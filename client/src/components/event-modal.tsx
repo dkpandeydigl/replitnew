@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,14 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import { useCalDAV } from "@/hooks/use-caldav";
 import { eventFormSchema, type EventFormData } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar"; //Added from original
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; //Added from original
+import { cn } from "@/lib/utils"; //Added from original
+import { CalendarIcon } from "lucide-react"; //Added from original
+import { format } from "date-fns"; //Added from original
+
 
 const RECURRENCE_OPTIONS = [
   { value: "NONE", label: "No repeat" },
@@ -24,12 +26,9 @@ const RECURRENCE_OPTIONS = [
   { value: "YEARLY", label: "Yearly" }
 ];
 
-const TIMEZONE_OPTIONS = [
-  { value: "UTC", label: "UTC" },
-  { value: "America/New_York", label: "Eastern Time" },
-  { value: "America/Chicago", label: "Central Time" },
-  { value: "America/Denver", label: "Mountain Time" },
-  { value: "America/Los_Angeles", label: "Pacific Time" }
+const TIMEZONES = [
+  { value: "Asia/Colombo", label: "(GMT +05:30) Asia/Colombo" },
+  { value: "UTC", label: "UTC" }
 ];
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {
@@ -40,7 +39,6 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
 }) {
   const { toast } = useToast();
   const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
-  const defaultCalendarId = calendars?.[0]?.id;
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -50,11 +48,10 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
       start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || defaultCalendarId || 1,
+      calendarId: event?.calendarId || calendars[0]?.id,
       location: event?.location || '',
-      timezone: 'UTC',
+      timezone: 'Asia/Colombo',
       attendees: '',
-      resources: '',
       recurrence: { frequency: 'NONE' }
     }
   });
@@ -63,26 +60,29 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
     try {
       const formattedData = {
         title: data.title,
-        description: data.description,
+        description: data.description || null,
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString(),
-        allDay: data.allDay,
+        allDay: Boolean(data.allDay),
         calendarId: Number(data.calendarId),
         location: data.location || null,
         recurrence: data.recurrence?.frequency !== 'NONE' ? data.recurrence : null
       };
 
       if (event) {
-        await updateEventMutation.mutateAsync({ id: event.id, data: formattedData });
-        toast({ title: "Event updated" });
+        await updateEventMutation.mutateAsync({ id: event.id, ...formattedData });
       } else {
         await createEventMutation.mutateAsync(formattedData);
-        toast({ title: "Event created" });
       }
+
+      toast({
+        title: "Success",
+        description: `Event ${event ? 'updated' : 'created'} successfully`,
+      });
       onClose();
     } catch (error) {
-      console.error("Failed to save event:", error);
-      toast({ 
+      console.error('Failed to save event:', error);
+      toast({
         title: "Error",
         description: "Failed to save event. Please check all required fields.",
         variant: "destructive"
@@ -92,187 +92,156 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{event ? 'Edit Event' : 'Create Event'}</DialogTitle>
+          <DialogTitle>Create Meeting</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Event title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Subject</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter subject" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Event description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea rows={6} placeholder="Enter description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="attendees"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Attendees</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter email addresses" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="timezone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Timezone</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIMEZONES.map((timezone) => (
+                            <SelectItem key={timezone.value} value={timezone.value}>
+                              {timezone.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="start"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Start Time</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="end"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>End Time</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="recurrence.frequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Repeat event</FormLabel>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue="NONE"
+                        className="space-y-2"
+                      >
+                        {RECURRENCE_OPTIONS.map((option) => (
+                          <div key={option.value} className="flex items-center space-x-2">
+                            <RadioGroupItem value={option.value} id={option.value} />
+                            <Label htmlFor={option.value}>{option.label}</Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Venue</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter venue" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="timezone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Timezone</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TIMEZONE_OPTIONS.map((tz) => (
-                        <SelectItem key={tz.value} value={tz.value}>
-                          {tz.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Event location" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="attendees"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Attendees</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter email addresses separated by commas" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="resources"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Resources</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Meeting room, equipment, etc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="recurrence.frequency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recurrence</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select recurrence" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {RECURRENCE_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="calendarId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Calendar</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value?.toString()}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select calendar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {calendars.map((calendar) => (
-                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
-                          {calendar.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               <Button type="submit">
-                {event ? 'Update Event' : 'Save Event'}
+                {event ? 'Update Meeting' : 'Save'}
               </Button>
             </div>
           </form>

@@ -70,10 +70,24 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       if (event?.id) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...data
+          ...data,
+          description: data.description || null,
+          location: data.location || null
+        });
+        toast({
+          title: "Success",
+          description: "Event updated successfully"
         });
       } else {
-        await createEventMutation.mutateAsync(data);
+        await createEventMutation.mutateAsync({
+          ...data,
+          description: data.description || null,
+          location: data.location || null
+        });
+        toast({
+          title: "Success",
+          description: "Event created successfully"
+        });
       }
       onClose();
     } catch (error) {
@@ -81,7 +95,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       toast({
         title: "Error",
         description: "Failed to save event",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   }
@@ -130,44 +144,42 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="start"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="end"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>End</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="allDay"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                <FormItem className="flex items-center space-x-2">
                   <FormControl>
                     <Checkbox 
                       checked={field.value} 
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel>All Day Event</FormLabel>
+                  <FormLabel className="font-normal">All Day Event</FormLabel>
                 </FormItem>
               )}
             />

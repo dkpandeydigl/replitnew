@@ -241,7 +241,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
                 Cancel
               </Button>
               <Button type="submit">
-                {event ? 'Update Meeting' : 'Save'}
+                {event ? 'Save Meeting' : 'Save Meeting'}
               </Button>
             </div>
           </form>

@@ -52,8 +52,8 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
         title: data.title,
         description: data.description || null,
         location: data.location || null,
-        start: data.start,
-        end: data.end,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString(),
         allDay: Boolean(data.allDay),
         calendarId: Number(data.calendarId),
         recurrence: data.recurrence || null

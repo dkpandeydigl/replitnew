@@ -71,13 +71,10 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
         return;
       }
 
-      const startDate = new Date(data.start);
-      const endDate = new Date(data.end);
-
       const formattedData = {
         ...data,
-        start: startDate,
-        end: endDate,
+        start: format(new Date(data.start), "yyyy-MM-dd'T'HH:mm:ss"),
+        end: format(new Date(data.end), "yyyy-MM-dd'T'HH:mm:ss"),
         description: data.description || null,
         location: data.location || null,
         recurrence: data.recurrence?.frequency === 'NONE' ? null : data.recurrence

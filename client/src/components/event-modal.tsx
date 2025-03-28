@@ -44,21 +44,18 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      // Validate dates and format them correctly
-      const startDate = new Date(data.start);
-      const endDate = new Date(data.end);
-      
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-        throw new Error("Invalid date format");
-      }
-      
+      // Format the data according to the schema
       const formattedData = {
-        ...data,
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-        calendarId: Number(data.calendarId)
+        title: data.title,
+        description: data.description || null,
+        location: data.location || null,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString(),
+        allDay: data.allDay || false,
+        calendarId: Number(data.calendarId),
+        recurrence: data.recurrence || null
       };
-      
+
       if (event) {
         await updateEventMutation.mutateAsync({
           id: event.id,

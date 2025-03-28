@@ -59,13 +59,23 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   async function onSubmit(data: EventFormData) {
     try {
+      if (!data.title || !data.start || !data.end) {
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const eventData = {
-        ...data,
+        title: data.title,
         calendarId: event?.calendarId || activeCalendar?.id || 1,
         description: data.description || null,
         location: data.location || null,
         start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString()
+        end: new Date(data.end).toISOString(),
+        allDay: data.allDay || false
       };
 
       if (event?.id) {

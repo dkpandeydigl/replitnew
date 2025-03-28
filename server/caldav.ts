@@ -499,17 +499,22 @@ class CalDAVClient {
   // Delete an event
   async deleteEvent(url: string): Promise<boolean> {
     try {
-      log(`Deleting event at URL: ${url}`, 'caldav');
+      // Ensure URL is absolute
+      const fullUrl = url.startsWith('http') ? url : (
+        url.startsWith('/') ? url : `/${url}`
+      );
+      
+      log(`Deleting event at URL: ${fullUrl}`, 'caldav');
 
       try {
         // First try standard DELETE
-        await this.client.delete(url);
+        await this.client.delete(fullUrl);
       } catch (error) {
         log(`Standard DELETE failed: ${error}`, 'caldav');
 
         // For DAViCal - try with special headers
         log('Trying DELETE with special headers for DAViCal', 'caldav');
-        await this.client.delete(url, {
+        await this.client.delete(fullUrl, {
           headers: {
             'If-Match': '*'
           }

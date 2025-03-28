@@ -9,6 +9,8 @@ import { useCalDAV } from "@/hooks/use-caldav";
 import { MapPin } from 'lucide-react';
 import { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "@/components/ui/toast";
+
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
@@ -44,18 +46,15 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      if (!data.title || !data.start || !data.end || !data.calendarId) {
-        throw new Error("Required fields are missing");
-      }
-
       const formattedData = {
-        title: data.title,
-        description: data.description || null,
-        location: data.location || null,
+        ...data,
+        title: data.title || '',
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString(),
         allDay: Boolean(data.allDay),
         calendarId: Number(data.calendarId),
+        description: data.description || null,
+        location: data.location || null,
         recurrence: data.recurrence || null
       };
 
@@ -70,6 +69,11 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       onClose();
     } catch (error) {
       console.error('Failed to save event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save event. Please check all required fields.",
+        variant: "destructive"
+      });
     }
   };
 

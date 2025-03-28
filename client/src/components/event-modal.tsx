@@ -75,17 +75,18 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: Eve
       };
 
       if (event?.id) {
-        await updateEventMutation.mutateAsync({
+        const formattedData = {
           id: event.id,
           title: data.title,
-          description: data.description,
-          location: data.location,
-          start: data.start,
-          end: data.end,
-          allDay: data.allDay,
+          description: data.description || "",
+          location: data.location || "",
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString(),
+          allDay: data.allDay || false,
           calendarId: event.calendarId,
           timezone: "Asia/Colombo"
-        });
+        };
+        await updateEventMutation.mutateAsync(formattedData);
         toast({
           title: "Success",
           description: "Meeting updated successfully",

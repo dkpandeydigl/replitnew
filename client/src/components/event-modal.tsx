@@ -70,12 +70,10 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
       onClose();
     } catch (error) {
       console.error('Failed to save event:', error);
-      const { toast } = useToast();
       toast({
         title: "Error",
         description: "Failed to save event. Please check all required fields.",
         variant: "destructive"
-      });
       });
     }
   };

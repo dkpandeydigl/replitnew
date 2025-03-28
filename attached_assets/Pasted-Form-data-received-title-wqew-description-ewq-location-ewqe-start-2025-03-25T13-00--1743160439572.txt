@@ -1,0 +1,57 @@
+Form data received: {title: 'wqew', description: 'ewq', location: 'ewqe', start: '2025-03-25T13:00', end: '2025-03-26T13:00', …}
+event-modal.tsx:68 Event context: {userId: 1, calendarId: 1, uid: '1743160418840-1nrux92qz@caldavclient', url: 'https://zpush.ajaydata.com/davical/caldav.php/lalc…calendar/1743160418840-1nrux92qz@caldavclient.ics', title: 'wqew', …}
+event-modal.tsx:69 Active calendar: {userId: 1, serverId: 1, name: 'Lalchand Saini calendar', color: '#FF2968', url: '/davical/caldav.php/lalchand/calendar/', …}
+event-modal.tsx:110 Sending update data: {title: 'wqew', calendarId: 1, description: 'ewq', location: 'ewqe', start: '2025-03-25T13:00', …}
+queryClient.ts:15 
+            
+            
+           PATCH https://41491204-3efa-4e5e-998e-87c96f3a0cd7-00-1ap4p2b06it8l.sisko.replit.dev/api/events/6 400 (Bad Request)
+apiRequest @ queryClient.ts:15
+mutationFn @ use-caldav.tsx:318
+fn @ @tanstack_react-query.js?v=f3d7f2e7:1189
+run @ @tanstack_react-query.js?v=f3d7f2e7:494
+start @ @tanstack_react-query.js?v=f3d7f2e7:536
+execute @ @tanstack_react-query.js?v=f3d7f2e7:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=f3d7f2e7:2630
+onSubmit @ event-modal.tsx:111
+(anonymous) @ chunk-YABUFNLM.js?v=f3d7f2e7:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=f3d7f2e7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=f3d7f2e7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=f3d7f2e7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=f3d7f2e7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=f3d7f2e7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=f3d7f2e7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=f3d7f2e7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=f3d7f2e7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=f3d7f2e7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=f3d7f2e7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=f3d7f2e7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=f3d7f2e7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=f3d7f2e7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5449Understand this errorAI
+event-modal.tsx:136 Failed to save event: Error: 400: {"message":"Invalid event data","errors":[{"code":"invalid_type","expected":"string","received":"undefined","path":["title"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["start"],"message":"Required"},{"code":"invalid_type","expected":"string","received":"undefined","path":["end"],"message":"Required"},{"code":"invalid_type","expected":"number","received":"undefined","path":["calendarId"],"message":"Required"}]}
+    at throwIfResNotOk (queryClient.ts:6:11)
+    at async apiRequest (queryClient.ts:22:3)
+    at async Object.mutationFn (use-caldav.tsx:318:19)
+onSubmit @ event-modal.tsx:136
+await in onSubmit
+(anonymous) @ chunk-YABUFNLM.js?v=f3d7f2e7:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=f3d7f2e7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=f3d7f2e7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=f3d7f2e7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=f3d7f2e7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=f3d7f2e7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=f3d7f2e7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=f3d7f2e7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=f3d7f2e7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=f3d7f2e7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=f3d7f2e7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=f3d7f2e7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=f3d7f2e7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=f3d7f2e7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5449Understand this errorAI

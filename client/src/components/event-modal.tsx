@@ -97,6 +97,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       if (event?.id) {
         // Format data according to schema requirements
         const updateData = {
+          id: event.id,
           title: data.title,
           calendarId: event.calendarId,
           description: data.description || '',

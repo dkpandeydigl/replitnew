@@ -110,7 +110,7 @@ toast({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Calendar</FormLabel>
-                  <Select value={field.value.toString()} onValueChange={(value) => field.onChange(parseInt(value))}>
+                  <Select value={field.value?.toString() || ''} onValueChange={(value) => field.onChange(parseInt(value))}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a calendar" />

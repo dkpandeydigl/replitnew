@@ -63,7 +63,17 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   async function onSubmit(data: EventFormData) {
     try {
+      // Debug logging
+      console.log("Form data received:", data);
+      console.log("Event context:", event);
+      console.log("Active calendar:", activeCalendar);
+
       if (!data.title || !data.start || !data.end) {
+        console.log("Missing required fields:", {
+          title: !data.title,
+          start: !data.start,
+          end: !data.end
+        });
         toast({
           title: "Error",
           description: "Please fill in all required fields",
@@ -72,27 +82,32 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         return;
       }
 
-      const eventData = {
-        title: data.title,
-        calendarId: event?.calendarId || activeCalendar?.id || 1,
-        description: data.description || null,
-        location: data.location || null,
-        start: data.start,
-        end: data.end,
-        allDay: data.allDay || false,
-      };
+      // Ensure calendarId is properly set
+      const calendarId = event?.calendarId || activeCalendar?.id;
+      if (!calendarId) {
+        console.error("No calendar ID available");
+        toast({
+          title: "Error",
+          description: "No calendar selected",
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (event?.id) {
         const updateData = {
           id: event.id,
           title: data.title,
-          calendarId: event.calendarId,
+          calendarId: calendarId,
           description: data.description || null,
           location: data.location || null,
-          start: data.start,
-          end: data.end,
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString(),
           allDay: data.allDay || false
         };
+        
+        // Debug logging for update
+        console.log("Sending update data:", updateData);
         await updateEventMutation.mutateAsync(updateData);
         toast({
           title: "Success",

@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { toast } = useToast();
 const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
-  const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
   const defaultCalendarId = calendars?.[0]?.id;
 

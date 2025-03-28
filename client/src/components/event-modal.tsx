@@ -44,14 +44,17 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      // Format the data according to the schema
+      if (!data.title || !data.start || !data.end || !data.calendarId) {
+        throw new Error("Required fields are missing");
+      }
+
       const formattedData = {
         title: data.title,
         description: data.description || null,
         location: data.location || null,
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString(),
-        allDay: data.allDay || false,
+        start: data.start,
+        end: data.end,
+        allDay: Boolean(data.allDay),
         calendarId: Number(data.calendarId),
         recurrence: data.recurrence || null
       };

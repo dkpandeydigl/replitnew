@@ -19,7 +19,7 @@ interface EventModalProps {
   event?: Event;
 }
 
-export function EventModal({ isOpen, onClose, event }: EventModalProps) {
+export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
   const { activeCalendar, createEventMutation, updateEventMutation } = useCalDAV();
   const { toast } = useToast();
 

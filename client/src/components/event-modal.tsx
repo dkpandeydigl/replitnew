@@ -104,6 +104,12 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
     }
   };
 
+  React.useEffect(() => {
+    if (!isOpen) {
+      form.reset(form.defaultValues);
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl">

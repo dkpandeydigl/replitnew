@@ -20,7 +20,7 @@ interface EventModalProps {
 }
 
 export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { activeCalendar, createEventMutation, updateEventMutation } = useCalDAV();
+  const { activeCalendar, createEventMutation, updateEventMutation, deleteEventMutation } = useCalDAV();
   const { toast } = useToast();
 
   const now = new Date();
@@ -189,12 +189,41 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               )}
             />
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                {event?.id ? 'Update' : 'Create'}
-              </Button>
+              <div className="flex justify-between w-full">
+                {event?.id && (
+                  <Button 
+                    type="button" 
+                    variant="destructive"
+                    onClick={async () => {
+                      try {
+                        await deleteEventMutation.mutateAsync(event.id);
+                        toast({
+                          title: "Success",
+                          description: "Event deleted successfully"
+                        });
+                        onClose();
+                      } catch (error) {
+                        console.error("Failed to delete event:", error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to delete event",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                )}
+                <div className="flex space-x-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {event?.id ? 'Update' : 'Create'}
+                  </Button>
+                </div>
+              </div>
             </div>
           </form>
         </Form>

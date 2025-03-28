@@ -32,30 +32,26 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: Eve
   const now = new Date();
   const later = new Date(now.getTime() + 60 * 60 * 1000);
 
-  const defaultValues = {
-    title: "",
-    description: "",
-    location: "",
-    start: now.toISOString().slice(0, 16),
-    end: later.toISOString().slice(0, 16),
-    allDay: false,
-    calendarId: calendars[0]?.id || 0,
+  const defaultValues = React.useMemo(() => ({
+    title: event?.title || "",
+    description: event?.description || "",
+    location: event?.location || "",
+    start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
+    end: event ? new Date(event.end).toISOString().slice(0, 16) : later.toISOString().slice(0, 16),
+    allDay: event?.allDay || false,
+    calendarId: event?.calendarId || calendars[0]?.id || 0,
     timezone: "Asia/Colombo"
-  };
+  }), [event, calendars]);
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: event ? {
-      ...defaultValues,
-      title: event.title,
-      description: event.description || "",
-      location: event.location || "",
-      start: new Date(event.start).toISOString().slice(0, 16),
-      end: new Date(event.end).toISOString().slice(0, 16),
-      allDay: event.allDay,
-      calendarId: event.calendarId
-    } : defaultValues
+    defaultValues,
+    values: defaultValues
   });
+
+  React.useEffect(() => {
+    form.reset(defaultValues);
+  }, [form, defaultValues]);
 
   const onSubmit = async (data: EventFormData) => {
     try {

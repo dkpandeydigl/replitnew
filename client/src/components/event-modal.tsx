@@ -40,13 +40,16 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
   const { toast } = useToast();
   const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
 
+  const now = new Date();
+  const later = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour later
+
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: event?.title || '',
       description: event?.description || '',
-      start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
-      end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
+      start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
+      end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : later.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || calendars[0]?.id,
       location: event?.location || '',

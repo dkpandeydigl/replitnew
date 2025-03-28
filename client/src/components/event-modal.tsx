@@ -1,4 +1,3 @@
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -79,13 +78,13 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: Eve
         await updateEventMutation.mutateAsync({
           id: event.id,
           title: data.title,
-          description: data.description || null,
-          location: data.location || null,
-          start: new Date(data.start).toISOString(),
-          end: new Date(data.end).toISOString(),
-          allDay: data.allDay || false,
-          calendarId: data.calendarId,
-          timezone: data.timezone
+          description: data.description,
+          location: data.location,
+          start: data.start,
+          end: data.end,
+          allDay: data.allDay,
+          calendarId: event.calendarId,
+          timezone: "Asia/Colombo"
         });
         toast({
           title: "Success",
@@ -98,7 +97,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: Eve
           description: "Meeting created successfully",
         });
       }
-      
+
       form.reset(defaultValues);
       onClose();
     } catch (error: any) {

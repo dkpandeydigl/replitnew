@@ -1,21 +1,45 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { eventFormSchema, type Event } from "@shared/schema";
-import { useCalDAV } from "@/hooks/use-caldav";
-import { MapPin } from 'lucide-react';
-import { useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { Calendar } from "@/components/ui/calendar";
+import { useCalDAV } from "@/hooks/use-caldav";
+import { eventFormSchema, type EventFormData } from "@shared/schema";
+import { useToast } from "@/components/ui/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 
+const RECURRENCE_OPTIONS = [
+  { value: "NONE", label: "No repeat" },
+  { value: "DAILY", label: "Daily" },
+  { value: "WEEKLY", label: "Weekly" },
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "YEARLY", label: "Yearly" }
+];
 
-export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
+const TIMEZONE_OPTIONS = [
+  { value: "UTC", label: "UTC" },
+  { value: "America/New_York", label: "Eastern Time" },
+  { value: "America/Chicago", label: "Central Time" },
+  { value: "America/Denver", label: "Mountain Time" },
+  { value: "America/Los_Angeles", label: "Pacific Time" }
+];
+
+export default function EventModal({ isOpen, onClose, event, selectedDate }: {
+  isOpen: boolean,
+  onClose: () => void,
+  event?: Event,
+  selectedDate?: Date
+}) {
   const { toast } = useToast();
-const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
-
+  const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
   const defaultCalendarId = calendars?.[0]?.id;
 
   const form = useForm<EventFormData>({
@@ -23,55 +47,42 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
     defaultValues: {
       title: event?.title || '',
       description: event?.description || '',
-      location: event?.location || '',
       start: event?.start ? new Date(event.start).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       end: event?.end ? new Date(event.end).toISOString().slice(0, 16) : selectedDate?.toISOString().slice(0, 16) || '',
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || defaultCalendarId || 1,
-      recurrence: event?.recurrence ? { frequency: event.recurrence } : { frequency: 'NONE' }
+      location: event?.location || '',
+      timezone: 'UTC',
+      attendees: '',
+      resources: '',
+      recurrence: { frequency: 'NONE' }
     }
   });
-
-  useEffect(() => {
-    if (isOpen && event) {
-      form.reset({
-        title: event.title,
-        description: event.description || '',
-        location: event.location || '',
-        start: new Date(event.start).toISOString().slice(0, 16),
-        end: new Date(event.end).toISOString().slice(0, 16),
-        allDay: event.allDay,
-        calendarId: event.calendarId,
-        recurrence: event.recurrence ? { frequency: event.recurrence } : undefined
-      });
-    }
-  }, [isOpen, event]);
 
   const onSubmit = async (data: EventFormData) => {
     try {
       const formattedData = {
         title: data.title,
+        description: data.description,
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString(),
-        allDay: Boolean(data.allDay),
+        allDay: data.allDay,
         calendarId: Number(data.calendarId),
-        description: data.description || null,
         location: data.location || null,
         recurrence: data.recurrence?.frequency !== 'NONE' ? data.recurrence : null
       };
 
       if (event) {
-        await updateEventMutation.mutateAsync({
-          id: event.id,
-          ...formattedData
-        });
+        await updateEventMutation.mutateAsync({ id: event.id, data: formattedData });
+        toast({ title: "Event updated" });
       } else {
         await createEventMutation.mutateAsync(formattedData);
+        toast({ title: "Event created" });
       }
       onClose();
     } catch (error) {
-      console.error('Failed to save event:', error);
-      toast({
+      console.error("Failed to save event:", error);
+      toast({ 
         title: "Error",
         description: "Failed to save event. Please check all required fields.",
         variant: "destructive"
@@ -81,12 +92,10 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{event ? 'Edit Event' : 'Create Event'}</DialogTitle>
-          <DialogDescription>Fill in the event details below</DialogDescription>
         </DialogHeader>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -96,7 +105,7 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input placeholder="Event title" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,26 +114,13 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
 
             <FormField
               control={form.control}
-              name="calendarId"
+              name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Calendar</FormLabel>
-                  <Select 
-                    value={field.value?.toString() || ''} 
-                    onValueChange={(value) => field.onChange(parseInt(value, 10))}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a calendar" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {calendars?.map((calendar) => (
-                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
-                          {calendar.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Event description" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -162,13 +158,22 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
 
             <FormField
               control={form.control}
-              name="description"
+              name="timezone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
+                  <FormLabel>Timezone</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMEZONE_OPTIONS.map((tz) => (
+                        <SelectItem key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -181,10 +186,7 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input className="pl-8" {...field} />
-                    </div>
+                    <Input placeholder="Event location" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -193,31 +195,48 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
 
             <FormField
               control={form.control}
-              name="recurrence"
+              name="attendees"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Attendees</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter email addresses separated by commas" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="resources"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resources</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Meeting room, equipment, etc." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="recurrence.frequency"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Recurrence</FormLabel>
-                  <Select
-                    value={field.value?.frequency || "NONE"}
-                    onValueChange={(value) => {
-                      if (value === "NONE") {
-                        field.onChange({ frequency: "NONE" });
-                      } else {
-                        field.onChange({ frequency: value });
-                      }
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="No repeat" />
-                      </SelectTrigger>
-                    </FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select recurrence" />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="NONE">No repeat</SelectItem>
-                      <SelectItem value="DAILY">Daily</SelectItem>
-                      <SelectItem value="WEEKLY">Weekly</SelectItem>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="YEARLY">Yearly</SelectItem>
+                      {RECURRENCE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -225,12 +244,37 @@ const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV()
               )}
             />
 
-            <DialogFooter>
-              <Button type="submit" disabled={createEventMutation.isPending || updateEventMutation.isPending}>
-                {event ? (updateEventMutation.isPending ? "Updating..." : "Update Event") : 
-                        (createEventMutation.isPending ? "Creating..." : "Create Event")}
+            <FormField
+              control={form.control}
+              name="calendarId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calendar</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value?.toString()}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select calendar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {calendars.map((calendar) => (
+                        <SelectItem key={calendar.id} value={calendar.id.toString()}>
+                          {calendar.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
               </Button>
-            </DialogFooter>
+              <Button type="submit">
+                {event ? 'Update Event' : 'Save Event'}
+              </Button>
+            </div>
           </form>
         </Form>
       </DialogContent>

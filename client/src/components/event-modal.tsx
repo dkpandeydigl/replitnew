@@ -59,23 +59,26 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   async function onSubmit(data: EventFormData) {
     try {
+      const eventData = {
+        ...data,
+        calendarId: event?.calendarId || activeCalendar?.id || 1,
+        description: data.description || null,
+        location: data.location || null,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString()
+      };
+
       if (event?.id) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...data,
-          description: data.description || null,
-          location: data.location || null
+          ...eventData
         });
         toast({
           title: "Success",
           description: "Event updated successfully"
         });
       } else {
-        await createEventMutation.mutateAsync({
-          ...data,
-          description: data.description || null,
-          location: data.location || null
-        });
+        await createEventMutation.mutateAsync(eventData);
         toast({
           title: "Success",
           description: "Event created successfully"

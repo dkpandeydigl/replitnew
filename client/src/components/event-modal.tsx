@@ -98,14 +98,25 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         // Format data according to schema requirements
         const updateData = {
           id: event.id,
-          title: data.title,
-          calendarId: event.calendarId,
-          description: data.description || null,
-          location: data.location || null,
-          start: new Date(data.start).toISOString(),
-          end: new Date(data.end).toISOString(),
-          allDay: data.allDay || false
+          title: data.title || '',
+          calendarId: event.calendarId || activeCalendar?.id || 1,
+          description: data.description || '',
+          location: data.location || '',
+          start: data.start,
+          end: data.end,
+          allDay: data.allDay || false,
+          timezone: 'UTC'
         };
+        
+        // Validate required fields
+        if (!updateData.title || !updateData.start || !updateData.end || !updateData.calendarId) {
+          toast({
+            title: "Error",
+            description: "Please fill in all required fields",
+            variant: "destructive",
+          });
+          return;
+        }
         
         // Debug logging for update
         console.log("Sending update data:", updateData);

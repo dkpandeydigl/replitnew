@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,18 +11,17 @@ import { useCalDAV } from "@/hooks/use-caldav";
 import { useToast } from "@/hooks/use-toast";
 import { EventFormData, eventFormSchema } from "@shared/schema";
 import type { Event } from "@shared/schema";
-import { formatISO, addHours } from "date-fns";
+import { addHours } from "date-fns";
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: Event | null;
+  event?: Event;
 }
 
-export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { createEvent, updateEvent } = useCalDAV();
+export function EventModal({ isOpen, onClose, event }: EventModalProps) {
+  const { activeCalendar, createEventMutation, updateEventMutation } = useCalDAV();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
 
   const now = new Date();
   const oneHourLater = addHours(now, 1);
@@ -36,11 +35,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       start: now.toISOString().slice(0, 16),
       end: oneHourLater.toISOString().slice(0, 16),
       allDay: false,
-      calendarId: 1
+      calendarId: activeCalendar?.id || 1
     }
   });
 
-  // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
       if (event) {
@@ -61,35 +59,21 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           start: now.toISOString().slice(0, 16),
           end: oneHourLater.toISOString().slice(0, 16),
           allDay: false,
-          calendarId: 1
+          calendarId: activeCalendar?.id || 1
         });
       }
     }
-  }, [isOpen, event, form]);
+  }, [isOpen, event, activeCalendar?.id, form]);
 
   async function onSubmit(data: EventFormData) {
     try {
-      setLoading(true);
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const formattedData = {
-        ...data,
-        start: formatISO(new Date(data.start)),
-        end: formatISO(new Date(data.end)),
-        timezone
-      };
-
       if (event?.id) {
-        await updateEvent(event.id, formattedData);
-        toast({
-          title: "Success",
-          description: "Event updated successfully",
+        await updateEventMutation.mutateAsync({
+          id: event.id,
+          ...data
         });
       } else {
-        await createEvent(formattedData);
-        toast({
-          title: "Success",
-          description: "Event created successfully",
-        });
+        await createEventMutation.mutateAsync(data);
       }
       onClose();
     } catch (error) {
@@ -99,8 +83,6 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         description: "Failed to save event",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -193,8 +175,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : 'Save Event'}
+              <Button type="submit">
+                {event?.id ? 'Update' : 'Create'}
               </Button>
             </div>
           </form>

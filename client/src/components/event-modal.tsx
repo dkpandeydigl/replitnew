@@ -70,7 +70,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
         return;
       }
 
-      const eventData = {
+      const formattedData = {
         ...data,
         start: new Date(data.start),
         end: new Date(data.end),
@@ -80,13 +80,13 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
       };
 
       if (event?.id) {
-        await updateEventMutation.mutateAsync({ id: event.id, ...eventData });
+        await updateEventMutation.mutateAsync({ id: event.id, ...formattedData });
         toast({
           title: "Success",
           description: "Meeting updated successfully",
         });
       } else {
-        await createEventMutation.mutateAsync(eventData);
+        await createEventMutation.mutateAsync(formattedData);
         toast({
           title: "Success",
           description: "Meeting created successfully",

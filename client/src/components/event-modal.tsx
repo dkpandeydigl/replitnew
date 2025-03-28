@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { useCalDAV } from "@/hooks/use-caldav";
-import { useToast } from "@/components/ui/toast/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { EventFormData, eventFormSchema } from "@shared/schema";
 import type { Event } from "@shared/schema";
 

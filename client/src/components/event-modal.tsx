@@ -1,5 +1,4 @@
-
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +21,7 @@ interface EventModalProps {
 export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
   const { activeCalendar, createEventMutation, updateEventMutation, deleteEventMutation } = useCalDAV();
   const { toast } = useToast();
+  const prevEventRef = useRef<string | null>(null);
 
   const now = new Date();
   const oneHourLater = addHours(now, 1);
@@ -35,8 +35,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
       end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || activeCalendar?.id || 1
-    }
+      calendarId: event?.calendarId || activeCalendar?.id || 1,
+    },
   });
 
   useEffect(() => {
@@ -48,12 +48,16 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
         end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
         allDay: event?.allDay || false,
-        calendarId: event?.calendarId || activeCalendar?.id || 1
+        calendarId: event?.calendarId || activeCalendar?.id || 1,
       });
     };
 
     if (isOpen) {
-      resetForm();
+      const currentEventString = JSON.stringify(event);
+      if (currentEventString !== prevEventRef.current) {
+        resetForm();
+        prevEventRef.current = currentEventString;
+      }
     }
   }, [isOpen, event, activeCalendar?.id, form]);
 
@@ -63,7 +67,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         toast({
           title: "Error",
           description: "Please fill in all required fields",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -75,7 +79,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         location: data.location || null,
         start: data.start,
         end: data.end,
-        allDay: data.allDay || false
+        allDay: data.allDay || false,
       };
 
       if (event?.id) {
@@ -87,11 +91,11 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           start: new Date(data.start).toISOString(),
           end: new Date(data.end).toISOString(),
           allDay: data.allDay || false,
-          calendarId: event.calendarId
+          calendarId: event.calendarId,
         });
         toast({
           title: "Success",
-          description: "Event updated successfully"
+          description: "Event updated successfully",
         });
       } else {
         await createEventMutation.mutateAsync({
@@ -101,7 +105,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         });
         toast({
           title: "Success",
-          description: "Event created successfully"
+          description: "Event created successfully",
         });
       }
       onClose();
@@ -110,7 +114,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       toast({
         title: "Error",
         description: "Failed to save event",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   }
@@ -119,10 +123,11 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{event?.id ? 'Edit Event' : 'Create Event'}</DialogTitle>
+          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* ... (rest of the form fields) */}
             <FormField
               control={form.control}
               name="title"
@@ -189,10 +194,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               render={({ field }) => (
                 <FormItem className="flex items-center space-x-2">
                   <FormControl>
-                    <Checkbox 
-                      checked={field.value} 
-                      onCheckedChange={field.onChange}
-                    />
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <FormLabel className="font-normal">All Day Event</FormLabel>
                 </FormItem>
@@ -201,15 +203,15 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
             <div className="flex justify-end space-x-2">
               <div className="flex justify-between w-full">
                 {event?.id && (
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     variant="destructive"
                     onClick={async () => {
                       try {
                         await deleteEventMutation.mutateAsync(event.id);
                         toast({
                           title: "Success",
-                          description: "Event deleted successfully"
+                          description: "Event deleted successfully",
                         });
                         onClose();
                       } catch (error) {
@@ -217,7 +219,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                         toast({
                           title: "Error",
                           description: "Failed to delete event",
-                          variant: "destructive"
+                          variant: "destructive",
                         });
                       }
                     }}
@@ -226,18 +228,4 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                   </Button>
                 )}
                 <div className="flex space-x-2">
-                  <Button type="button" variant="outline" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">
-                    {event?.id ? 'Update' : 'Create'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
+                  <Button type="button

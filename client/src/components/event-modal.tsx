@@ -115,9 +115,13 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         });
       } else {
         await createEventMutation.mutateAsync({
-          ...eventData,
+          title: data.title,
+          calendarId: activeCalendar?.id || 1,
+          description: data.description || null,
+          location: data.location || null,
           start: new Date(data.start).toISOString(),
           end: new Date(data.end).toISOString(),
+          allDay: data.allDay || false
         });
         toast({
           title: "Success",

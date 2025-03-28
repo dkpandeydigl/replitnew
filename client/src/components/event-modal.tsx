@@ -70,14 +70,23 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
         return;
       }
 
+      const eventData = {
+        ...data,
+        start: new Date(data.start),
+        end: new Date(data.end),
+        description: data.description || null,
+        location: data.location || null,
+        recurrence: data.recurrence?.frequency === 'NONE' ? null : data.recurrence
+      };
+
       if (event?.id) {
-        await updateEventMutation.mutateAsync({ id: event.id, ...data, start: new Date(data.start), end: new Date(data.end) });
+        await updateEventMutation.mutateAsync({ id: event.id, ...eventData });
         toast({
           title: "Success",
           description: "Meeting updated successfully",
         });
       } else {
-        await createEventMutation.mutateAsync({ ...data, start: new Date(data.start), end: new Date(data.end) });
+        await createEventMutation.mutateAsync(eventData);
         toast({
           title: "Success",
           description: "Meeting created successfully",

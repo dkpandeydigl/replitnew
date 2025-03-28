@@ -44,13 +44,20 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const onSubmit = async (data: EventFormData) => {
     try {
+      // Ensure dates are properly formatted as ISO strings
+      const formattedData = {
+        ...data,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString()
+      };
+      
       if (event) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...data
+          ...formattedData
         });
       } else {
-        await createEventMutation.mutateAsync(data);
+        await createEventMutation.mutateAsync(formattedData);
       }
       onClose();
     } catch (error) {

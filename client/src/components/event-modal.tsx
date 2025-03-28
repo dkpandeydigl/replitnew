@@ -228,4 +228,5 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                   </Button>
                 )}
                 <div className="flex space-x-2">
-                  <Button type="button
+                  <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                  <Button type="submit">Save</Button>

@@ -44,11 +44,19 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      // Ensure dates are properly formatted as ISO strings
+      // Validate dates and format them correctly
+      const startDate = new Date(data.start);
+      const endDate = new Date(data.end);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new Error("Invalid date format");
+      }
+      
       const formattedData = {
         ...data,
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString()
+        start: startDate.toISOString(),
+        end: endDate.toISOString(),
+        calendarId: Number(data.calendarId)
       };
       
       if (event) {

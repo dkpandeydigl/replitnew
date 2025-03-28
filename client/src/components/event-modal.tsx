@@ -29,39 +29,31 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      location: "",
-      start: now.toISOString().slice(0, 16),
-      end: oneHourLater.toISOString().slice(0, 16),
-      allDay: false,
-      calendarId: activeCalendar?.id || 1
+      title: event?.title || "",
+      description: event?.description || "",
+      location: event?.location || "",
+      start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
+      end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
+      allDay: event?.allDay || false,
+      calendarId: event?.calendarId || activeCalendar?.id || 1
     }
   });
 
   useEffect(() => {
+    const resetForm = () => {
+      form.reset({
+        title: event?.title || "",
+        description: event?.description || "",
+        location: event?.location || "",
+        start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
+        end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
+        allDay: event?.allDay || false,
+        calendarId: event?.calendarId || activeCalendar?.id || 1
+      });
+    };
+
     if (isOpen) {
-      if (event) {
-        form.reset({
-          title: event.title,
-          description: event.description || "",
-          location: event.location || "",
-          start: new Date(event.start).toISOString().slice(0, 16),
-          end: new Date(event.end).toISOString().slice(0, 16),
-          allDay: event.allDay,
-          calendarId: event.calendarId
-        });
-      } else {
-        form.reset({
-          title: "",
-          description: "",
-          location: "",
-          start: now.toISOString().slice(0, 16),
-          end: oneHourLater.toISOString().slice(0, 16),
-          allDay: false,
-          calendarId: activeCalendar?.id || 1
-        });
-      }
+      resetForm();
     }
   }, [isOpen, event, activeCalendar?.id, form]);
 

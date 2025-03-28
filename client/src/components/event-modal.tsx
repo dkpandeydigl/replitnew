@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import * as React from "react"
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCalDAV } from "@/hooks/use-caldav";
@@ -39,7 +40,7 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {
 }) {
   const { toast } = useToast();
   const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
-
+  
   const now = new Date();
   const later = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour later
 

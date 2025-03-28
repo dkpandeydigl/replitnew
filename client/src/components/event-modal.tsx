@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -24,26 +24,48 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  // Set default dates to current time and current time + 1 hour
   const now = new Date();
   const oneHourLater = addHours(now, 1);
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
-      title: event?.title || "",
-      description: event?.description || "",
-      location: event?.location || "",
-      start: event?.start ? 
-        new Date(event.start).toISOString().slice(0, 16) : 
-        now.toISOString().slice(0, 16),
-      end: event?.end ? 
-        new Date(event.end).toISOString().slice(0, 16) : 
-        oneHourLater.toISOString().slice(0, 16),
-      allDay: event?.allDay || false,
-      calendarId: event?.calendarId || 1
+      title: "",
+      description: "",
+      location: "",
+      start: now.toISOString().slice(0, 16),
+      end: oneHourLater.toISOString().slice(0, 16),
+      allDay: false,
+      calendarId: 1
     }
   });
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (event) {
+        form.reset({
+          title: event.title,
+          description: event.description || "",
+          location: event.location || "",
+          start: new Date(event.start).toISOString().slice(0, 16),
+          end: new Date(event.end).toISOString().slice(0, 16),
+          allDay: event.allDay,
+          calendarId: event.calendarId
+        });
+      } else {
+        form.reset({
+          title: "",
+          description: "",
+          location: "",
+          start: now.toISOString().slice(0, 16),
+          end: oneHourLater.toISOString().slice(0, 16),
+          allDay: false,
+          calendarId: 1
+        });
+      }
+    }
+  }, [isOpen, event, form]);
 
   async function onSubmit(data: EventFormData) {
     try {
@@ -57,25 +79,24 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       };
 
       if (event?.id) {
-        await updateEvent.mutateAsync({
-          id: event.id,
-          ...formattedData
+        await updateEvent(event.id, formattedData);
+        toast({
+          title: "Success",
+          description: "Event updated successfully",
         });
       } else {
-        await createEvent.mutateAsync(formattedData);
+        await createEvent(formattedData);
+        toast({
+          title: "Success",
+          description: "Event created successfully",
+        });
       }
-
-      toast({
-        title: "Success",
-        description: event?.id ? "Meeting updated successfully" : "Meeting created successfully",
-      });
       onClose();
-      form.reset();
     } catch (error) {
-      console.error('Event submission error:', error);
+      console.error("Failed to save event:", error);
       toast({
         title: "Error",
-        description: "Failed to save meeting",
+        description: "Failed to save event",
         variant: "destructive",
       });
     } finally {
@@ -110,7 +131,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} value={field.value || ""} />
                   </FormControl>
                 </FormItem>
               )}
@@ -122,7 +143,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} value={field.value || ""} />
                   </FormControl>
                 </FormItem>
               )}
@@ -157,14 +178,14 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               control={form.control}
               name="allDay"
               render={({ field }) => (
-                <FormItem className="flex items-center space-x-2">
+                <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                   <FormControl>
                     <Checkbox 
                       checked={field.value} 
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel className="!mt-0">All Day</FormLabel>
+                  <FormLabel>All Day Event</FormLabel>
                 </FormItem>
               )}
             />

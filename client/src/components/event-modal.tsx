@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function EventModal({ isOpen, onClose, event, selectedDate }: {isOpen:boolean, onClose:()=>void, event?:Event, selectedDate?: Date}) {
   const { toast } = useToast();
+const { calendars = [], createEventMutation, updateEventMutation } = useCalDAV();
   const { calendars, createEventMutation, updateEventMutation } = useCalDAV();
 
   const defaultCalendarId = calendars?.[0]?.id;
@@ -50,15 +51,14 @@ export default function EventModal({ isOpen, onClose, event, selectedDate }: {is
   const onSubmit = async (data: EventFormData) => {
     try {
       const formattedData = {
-        ...data,
-        title: data.title || '',
+        title: data.title,
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString(),
         allDay: Boolean(data.allDay),
         calendarId: Number(data.calendarId),
         description: data.description || null,
         location: data.location || null,
-        recurrence: data.recurrence || null
+        recurrence: data.recurrence?.frequency !== 'NONE' ? data.recurrence : null
       };
 
       if (event) {

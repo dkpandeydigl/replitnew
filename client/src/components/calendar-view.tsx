@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCalDAV } from '@/hooks/use-caldav';
 import { Calendar as FullCalendar } from '@fullcalendar/core';
+import { Calendar as FullCalendarType } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import monthGridPlugin from '@fullcalendar/daygrid';
-import { Calendar as FullCalendarType } from '@fullcalendar/core';
 import { Loader2, AlertTriangle, Calendar as CalendarIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -38,7 +37,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
 
       // Create the calendar instance
       const calendar = new FullCalendar(calendarEl, {
-        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, monthGridPlugin],
+        plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
         initialView: 'dayGridMonth',
         headerToolbar: false, // We provide our own header
         height: '100%',

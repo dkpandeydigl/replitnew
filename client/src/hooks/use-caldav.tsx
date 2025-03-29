@@ -13,15 +13,20 @@ interface CalDAVContextType {
   refreshServers: () => Promise<void>;
 }
 
-const CalDAVContext = createContext<CalDAVContextType | undefined>(undefined);
+export const CalDAVContext = createContext<CalDAVContextType | null>(null);
 
 export function useCalDAV() {
   const context = useContext(CalDAVContext);
   if (!context) {
     throw new Error('useCalDAV must be used within a CalDAVProvider');
   }
+  return context;
+}
 
-  const { data: servers, isLoading: serversLoading } = useQuery({
+export function CalDAVProvider({ children }: { children: React.ReactNode }) {
+  const [calendars, setCalendars] = useState<Calendar[]>([]);
+
+  const { data: servers = [], isLoading: serversLoading } = useQuery({
     queryKey: ['servers'],
     queryFn: async () => {
       const response = await axios.get('/api/servers');
@@ -36,18 +41,26 @@ export function useCalDAV() {
     }
   });
 
-  return {
-    servers: servers || [],
+  const refreshCalendars = async () => {
+    const response = await axios.get('/api/calendars');
+    setCalendars(response.data);
+  };
+
+  const refreshServers = async () => {
+    await axios.get('/api/servers');
+  };
+
+  const value = {
+    servers,
+    calendars,
     serversLoading,
     connectServerMutation,
-    refreshCalendars: async () => {},
-    refreshServers: async () => {}
+    refreshCalendars,
+    refreshServers
   };
-}
 
-export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   return (
-    <CalDAVContext.Provider value={useCalDAV()}>
+    <CalDAVContext.Provider value={value}>
       {children}
     </CalDAVContext.Provider>
   );

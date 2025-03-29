@@ -2,7 +2,7 @@ import { createContext, ReactNode, useContext, useState, useEffect } from 'react
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Event, CaldavServer, InsertCaldavServer, InsertCalendar, InsertEvent } from '@shared/schema';
+import { Calendar, Event, CaldavServer } from '@shared/schema';
 import { useAuth } from '@/hooks/use-auth';
 
 // Types
@@ -14,113 +14,38 @@ type ServerConnectionData = {
   token?: string;
 };
 
-type CalendarUpdateData = {
-  id: number;
-  data: Partial<Calendar>;
-};
-
-type EventData = {
-  calendarId: number;
-  title: string;
-  description?: string;
-  location?: string;
-  start: Date;
-  end: Date;
-  allDay: boolean;
-};
-
-type EventUpdateData = {
-  id: number;
-  data: Partial<EventData>;
-};
-
-// Interface for CalDAV context
 type CalDAVContextType = {
-  // Server state
   servers: CaldavServer[];
   serversLoading: boolean;
   serverError: Error | null;
-
-  // Calendar state
   calendars: Calendar[];
   calendarsLoading: boolean;
   calendarError: Error | null;
   activeCalendar: Calendar | null;
   setActiveCalendar: (calendar: Calendar | null) => void;
-  createCalendarMutation: any; // Added createCalendarMutation
-
-  // Event state
   events: Event[];
   eventsLoading: boolean;
   eventError: Error | null;
-
-  // Server mutations
   connectServerMutation: any;
   deleteServerMutation: any;
-
-  // Calendar mutations
   discoverCalendarsMutation: any;
   updateCalendarMutation: any;
   deleteCalendarMutation: any;
-
-  // Event mutations
+  createCalendarMutation: any;
   createEventMutation: any;
   updateEventMutation: any;
   deleteEventMutation: any;
-
-  // Date range
   dateRange: { start: Date | null; end: Date | null };
   setDateRange: (range: { start: Date | null; end: Date | null }) => void;
-
-  // View type
   viewType: string;
   setViewType: (type: string) => void;
 };
 
-// Default context with empty values
-const defaultContextValue: CalDAVContextType = {
-  servers: [],
-  serversLoading: false,
-  serverError: null,
+const CalDAVContext = createContext<CalDAVContextType | null>(null);
 
-  calendars: [],
-  calendarsLoading: false,
-  calendarError: null,
-  activeCalendar: null,
-  setActiveCalendar: () => {},
-  createCalendarMutation: {}, // Added createCalendarMutation
-
-  events: [],
-  eventsLoading: false,
-  eventError: null,
-
-  connectServerMutation: {},
-  deleteServerMutation: {},
-
-  discoverCalendarsMutation: {},
-  updateCalendarMutation: {},
-  deleteCalendarMutation: {},
-
-  createEventMutation: {},
-  updateEventMutation: {},
-  deleteEventMutation: {},
-
-  dateRange: { start: null, end: null },
-  setDateRange: () => {},
-
-  viewType: 'dayGridMonth',
-  setViewType: () => {}
-};
-
-// Create context with default values
-const CalDAVContext = createContext<CalDAVContextType>(defaultContextValue);
-
-// CalDAV Provider
 function CalDAVProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
-
-  // State for active calendar and date range
   const [activeCalendar, setActiveCalendar] = useState<Calendar | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
@@ -249,7 +174,7 @@ function CalDAVProvider({ children }: { children: ReactNode }) {
   });
 
   const updateCalendarMutation = useMutation({
-    mutationFn: async ({ id, data }: CalendarUpdateData) => {
+    mutationFn: async ({ id, data }: {id: number; data: Partial<Calendar>}) => {
       const res = await apiRequest('PATCH', `/api/calendars/${id}`, data);
       return await res.json();
     },
@@ -294,7 +219,7 @@ function CalDAVProvider({ children }: { children: ReactNode }) {
   });
 
   const createCalendarMutation = useMutation({
-    mutationFn: async (data: InsertCalendar) => {
+    mutationFn: async (data: any) => {
       try {
         const response = await apiRequest('POST', '/api/calendars', data);
         const contentType = response.headers.get('content-type');
@@ -336,7 +261,7 @@ function CalDAVProvider({ children }: { children: ReactNode }) {
 
   // Event mutations
   const createEventMutation = useMutation({
-    mutationFn: async (data: EventData) => {
+    mutationFn: async (data: any) => {
       const res = await apiRequest('POST', '/api/events', data);
       return await res.json();
     },
@@ -427,48 +352,40 @@ function CalDAVProvider({ children }: { children: ReactNode }) {
     }
   }, [discoverCalendarsMutation.isSuccess]);
 
-  const contextValue: CalDAVContextType = {
+  const value = {
     servers,
     serversLoading,
     serverError,
-
     calendars,
     calendarsLoading,
     calendarError,
     activeCalendar,
     setActiveCalendar,
-    createCalendarMutation, // Added createCalendarMutation
-
     events,
     eventsLoading,
     eventError,
-
     connectServerMutation,
     deleteServerMutation,
-
     discoverCalendarsMutation,
     updateCalendarMutation,
     deleteCalendarMutation,
-
+    createCalendarMutation,
     createEventMutation,
     updateEventMutation,
     deleteEventMutation,
-
     dateRange,
     setDateRange,
-
     viewType,
     setViewType
   };
 
   return (
-    <CalDAVContext.Provider value={contextValue}>
+    <CalDAVContext.Provider value={value}>
       {children}
     </CalDAVContext.Provider>
   );
 }
 
-// Hook to use CalDAV context
 function useCalDAV() {
   const context = useContext(CalDAVContext);
   if (!context) {

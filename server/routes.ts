@@ -579,7 +579,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const cal of discoveredCalendars) {
         discovered++;
-        const existingCal = await storage.findCalendarByUrl(cal.url);
+        const existingCal = await storage.getCalendars(req.user.id).then(cals => 
+          cals.find(c => c.url === cal.url)
+        );
 
         if (!existingCal) {
           const newCal = await storage.createCalendar({

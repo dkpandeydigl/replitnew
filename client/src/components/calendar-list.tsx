@@ -146,12 +146,14 @@ export default function CalendarList() {
         throw new Error("No servers available");
       }
       
-      const response = await createCalendarMutation.mutateAsync({
+      await createCalendarMutation.mutateAsync({
         name: data.name,
         color: data.color,
-        serverId: servers[0].id,
-        url: servers[0].url
+        serverId: servers[0].id
       });
+      
+      setIsCreateDialogOpen(false);
+      createForm.reset();
 
       if (response) {
         setIsCreateDialogOpen(false);

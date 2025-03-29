@@ -1,0 +1,54 @@
+Creating calendar with data: {name: 'pandey', color: '#3B82F6', serverId: 1, userId: 1}color: "#3B82F6"name: "pandey"serverId: 1userId: 1[[Prototype]]: Object
+use-caldav.tsx:315 Calendar creation error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+mutationFn @ use-caldav.tsx:315
+await in mutationFn
+fn @ @tanstack_react-query.js?v=f3d7f2e7:1189
+run @ @tanstack_react-query.js?v=f3d7f2e7:494
+start @ @tanstack_react-query.js?v=f3d7f2e7:536
+execute @ @tanstack_react-query.js?v=f3d7f2e7:1225
+await in execute
+mutate @ @tanstack_react-query.js?v=f3d7f2e7:2630
+onCreateSubmit @ calendar-list.tsx:163
+(anonymous) @ chunk-YABUFNLM.js?v=f3d7f2e7:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=f3d7f2e7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=f3d7f2e7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=f3d7f2e7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=f3d7f2e7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=f3d7f2e7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=f3d7f2e7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=f3d7f2e7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=f3d7f2e7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=f3d7f2e7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=f3d7f2e7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=f3d7f2e7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=f3d7f2e7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=f3d7f2e7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5449Understand this errorAI
+use-caldav.tsx:323 Calendar mutation error: Error: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at Object.mutationFn (use-caldav.tsx:316:15)
+onError @ use-caldav.tsx:323
+execute @ @tanstack_react-query.js?v=f3d7f2e7:1254
+await in execute
+mutate @ @tanstack_react-query.js?v=f3d7f2e7:2630
+onCreateSubmit @ calendar-list.tsx:163
+(anonymous) @ chunk-YABUFNLM.js?v=f3d7f2e7:1675
+await in (anonymous)
+callCallback2 @ chunk-RPCDYKBN.js?v=f3d7f2e7:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=f3d7f2e7:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=f3d7f2e7:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=f3d7f2e7:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=f3d7f2e7:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=f3d7f2e7:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=f3d7f2e7:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=f3d7f2e7:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=f3d7f2e7:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=f3d7f2e7:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=f3d7f2e7:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=f3d7f2e7:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=f3d7f2e7:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=f3d7f2e7:5449Understand this errorAI
+calendar-list.tsx:178 Failed to create calendar: Error: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+    at Object.mutationFn (use-caldav.tsx:316:15)

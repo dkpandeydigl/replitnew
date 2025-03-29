@@ -10,7 +10,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "npm run dev"]
 
 [workflows]
-runButton = "Start App"
+runButton = "Start Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -66,6 +66,19 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+
+[[workflows.workflow]]
+name = "Start Dev Server"
+author = 40353357
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install --no-audit"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

@@ -81,7 +81,13 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     onSuccess: async (data) => {
       await refetchServers();
       // Discover calendars after successful connection
-      discoverCalendarsMutation.mutate({ serverId: data.id });
+      const response = await fetch('/api/calendars/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serverId: data.id })
+      });
+      if (!response.ok) throw new Error('Failed to discover calendars');
+      await refetchCalendars();
     }
   });
 

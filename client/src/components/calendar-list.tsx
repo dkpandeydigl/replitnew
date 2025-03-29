@@ -47,7 +47,9 @@ export default function CalendarList() {
     serversLoading,
     discoverCalendarsMutation,
     updateCalendarMutation,
-    createCalendarMutation
+    createCalendarMutation,
+    selectedServer, // Assuming this is added to useCalDAV hook
+    refreshCalendars // Assuming this is a function in useCalDAV hook
   } = useCalDAV();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -80,17 +82,20 @@ export default function CalendarList() {
     }
   }, [selectedCalendar, form]);
 
-  const handleRefreshCalendars = () => {
-    if (servers && servers.length > 0) {
-      servers.forEach(server => {
-        discoverCalendarsMutation.mutate(server.id);
+  const handleRefreshCalendars = async () => {
+    if (!selectedServer) return;
+
+    try {
+      const response = await fetch('/api/calendars/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serverId: selectedServer.id })
       });
-    } else {
-      toast({
-        title: "No servers connected",
-        description: "Please connect to a CalDAV server first",
-        variant: "destructive"
-      });
+
+      if (!response.ok) throw new Error('Failed to discover calendars');
+      await refreshCalendars();
+    } catch (error) {
+      console.error('Failed to refresh calendars:', error);
     }
   };
 

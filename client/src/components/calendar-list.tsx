@@ -190,9 +190,9 @@ export default function CalendarList() {
             size="sm" 
             className="text-gray-500 hover:text-primary h-8 w-8 p-0"
             onClick={handleRefreshCalendars}
-            disabled={discoverCalendarsMutation.isPending || serversLoading}
+            disabled={discoverCalendarsMutation.isLoading || serversLoading}
           >
-            <RefreshCw size={16} className={discoverCalendarsMutation.isPending ? "animate-spin" : ""} />
+            <RefreshCw size={16} className={discoverCalendarsMutation.isLoading ? "animate-spin" : ""} />
             <span className="sr-only">Resync Calendars</span>
           </Button>
         </div>

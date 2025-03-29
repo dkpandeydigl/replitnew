@@ -68,11 +68,12 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       console.log("Event context:", event);
       console.log("Active calendar:", activeCalendar);
 
-      if (!data.title || !data.start || !data.end) {
+      if (!data.title || !data.start || !data.end || !data.calendarId) {
         console.log("Missing required fields:", {
           title: !data.title,
           start: !data.start,
-          end: !data.end
+          end: !data.end,
+          calendarId: !data.calendarId
         });
         toast({
           title: "Error",
@@ -98,26 +99,18 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         // Format data according to schema requirements
         const updateData = {
           id: event.id,
-          title: data.title || '',
-          calendarId: event.calendarId || activeCalendar?.id || 1,
-          description: data.description || '',
-          location: data.location || '',
-          start: data.start,
-          end: data.end,
-          allDay: data.allDay || false,
-          timezone: 'UTC'
+          data: {
+            title: data.title,
+            calendarId: event.calendarId || activeCalendar?.id || 1,
+            description: data.description || '',
+            location: data.location || '',
+            start: new Date(data.start).toISOString(),
+            end: new Date(data.end).toISOString(),
+            allDay: data.allDay || false,
+            timezone: 'UTC'
+          }
         };
-        
-        // Validate required fields
-        if (!updateData.title || !updateData.start || !updateData.end || !updateData.calendarId) {
-          toast({
-            title: "Error",
-            description: "Please fill in all required fields",
-            variant: "destructive",
-          });
-          return;
-        }
-        
+
         // Debug logging for update
         console.log("Sending update data:", updateData);
         await updateEventMutation.mutateAsync(updateData);
@@ -159,7 +152,6 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* ... (rest of the form fields) */}
             <FormField
               control={form.control}
               name="title"
@@ -229,6 +221,18 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                   <FormLabel className="font-normal">All Day Event</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="calendarId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calendar ID</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />

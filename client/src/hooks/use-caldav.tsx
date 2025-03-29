@@ -1,10 +1,14 @@
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Server, Calendar } from '@/lib/types';
+import axios from 'axios';
 
 interface CalDAVContextType {
   servers: Server[];
   calendars: Calendar[];
+  serversLoading: boolean;
+  connectServerMutation: any;
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
 }
@@ -16,44 +20,34 @@ export function useCalDAV() {
   if (!context) {
     throw new Error('useCalDAV must be used within a CalDAVProvider');
   }
-  return context;
+
+  const { data: servers, isLoading: serversLoading } = useQuery({
+    queryKey: ['servers'],
+    queryFn: async () => {
+      const response = await axios.get('/api/servers');
+      return response.data;
+    }
+  });
+
+  const connectServerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await axios.post('/api/servers/connect', data);
+      return response.data;
+    }
+  });
+
+  return {
+    servers: servers || [],
+    serversLoading,
+    connectServerMutation,
+    refreshCalendars: async () => {},
+    refreshServers: async () => {}
+  };
 }
 
 export function CalDAVProvider({ children }: { children: React.ReactNode }) {
-  const [servers, setServers] = useState<Server[]>([]);
-  const [calendars, setCalendars] = useState<Calendar[]>([]);
-
-  const refreshCalendars = useCallback(async () => {
-    try {
-      const response = await fetch('/api/calendars');
-      if (!response.ok) throw new Error('Failed to fetch calendars');
-      const data = await response.json();
-      setCalendars(data);
-    } catch (error) {
-      console.error('Error refreshing calendars:', error);
-    }
-  }, []);
-
-  const refreshServers = useCallback(async () => {
-    try {
-      const response = await fetch('/api/servers');
-      if (!response.ok) throw new Error('Failed to fetch servers');
-      const data = await response.json();
-      setServers(data);
-    } catch (error) {
-      console.error('Error refreshing servers:', error);
-    }
-  }, []);
-
-  const value = {
-    servers,
-    calendars,
-    refreshCalendars,
-    refreshServers
-  };
-
   return (
-    <CalDAVContext.Provider value={value}>
+    <CalDAVContext.Provider value={useCalDAV()}>
       {children}
     </CalDAVContext.Provider>
   );

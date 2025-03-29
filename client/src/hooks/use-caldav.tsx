@@ -41,9 +41,9 @@ type CalDAVContextType = {
   setViewType: (type: string) => void;
 };
 
-const CalDAVContext = createContext<CalDAVContextType | null>(null);
+export const CalDAVContext = createContext<CalDAVContextType>({} as CalDAVContextType);
 
-function CalDAVProvider({ children }: { children: ReactNode }) {
+export function CalDAVProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeCalendar, setActiveCalendar] = useState<Calendar | null>(null);

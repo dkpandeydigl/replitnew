@@ -314,8 +314,8 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
   });
   
   const updateEventMutation = useMutation({
-    mutationFn: async ({ id, data }: EventUpdateData) => {
-      const res = await apiRequest('PATCH', `/api/events/${id}`, data);
+    mutationFn: async (data: any) => {
+      const res = await apiRequest('PATCH', `/api/events/${data.id}`, data);
       return await res.json();
     },
     onSuccess: () => {

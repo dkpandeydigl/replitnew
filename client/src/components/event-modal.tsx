@@ -96,11 +96,14 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       }
 
       if (event?.id) {
+        console.log('Updating event:', event);
+        console.log('Form data:', data);
+        
         // Format data according to schema requirements
         const updateData = {
           id: event.id,
           title: data.title,
-          calendarId: event.calendarId || activeCalendar?.id || 1,
+          calendarId: event.calendarId,
           description: data.description || '',
           location: data.location || '',
           start: new Date(data.start).toISOString(),
@@ -108,6 +111,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           allDay: data.allDay || false
         };
 
+        console.log('Update data being sent:', updateData);
+        
         // Debug logging for update
         console.log("Sending update data:", updateData);
         await updateEventMutation.mutateAsync(updateData);

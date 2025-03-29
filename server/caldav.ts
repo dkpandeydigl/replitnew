@@ -147,7 +147,12 @@ class CalDAVClient {
           const cleanBaseUrl = this.baseUrl.replace(/\/+$/, '');
           // Add caldav.php path if not present
           if (!cleanBaseUrl.includes('caldav.php')) {
-            this.baseUrl = `${cleanBaseUrl}/caldav.php/${auth.username}/`;
+            const username = this.client.defaults.headers['Authorization']?.includes('Basic ') 
+              ? Buffer.from(this.client.defaults.headers['Authorization'].split(' ')[1], 'base64')
+                .toString()
+                .split(':')[0]
+              : '';
+            this.baseUrl = `${cleanBaseUrl}/caldav.php/${username}/`;
           }
         }
 

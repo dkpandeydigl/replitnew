@@ -5,7 +5,7 @@ import cors from "cors";
 
 const app = express();
 app.use(cors({
-  origin: ["https://zpush.ajaydata.com", /\.replit\.dev$/],
+  origin: true,
   credentials: true
 }));
 app.use(express.json());

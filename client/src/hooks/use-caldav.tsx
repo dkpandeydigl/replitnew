@@ -15,6 +15,8 @@ interface CalDAVContextType {
   refreshServers: () => Promise<void>;
   dateRange: { start: Date; end: Date };
   setDateRange: (dateRange: { start: Date; end: Date }) => void;
+  viewType: string;
+  setViewType: (view: string) => void;
 }
 
 export const CalDAVContext = createContext<CalDAVContextType | null>(null);
@@ -33,6 +35,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     start: new Date(),
     end: new Date()
   });
+  const [viewType, setViewType] = useState<string>('dayGridMonth');
 
   const { data: servers = [], isLoading: serversLoading } = useQuery({
     queryKey: ['servers'],
@@ -99,7 +102,9 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     refreshCalendars,
     refreshServers,
     dateRange,
-    setDateRange
+    setDateRange,
+    viewType,
+    setViewType
   };
 
   return (

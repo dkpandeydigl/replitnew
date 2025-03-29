@@ -340,9 +340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Return empty array if no events found
           res.json(events);
-        } catch (eventsError) {
-          console.error('Error processing events batch:', eventsError);
-          res.json([]);  // Return empty array instead of error for new calendars
+        } catch (error) {
+          console.error('Error processing events:', error);
+          res.status(500).json({ message: `Failed to fetch events: ${error.message}` });
         }
       } else {
         // Fetch from local database

@@ -103,7 +103,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         const updateData = {
           id: event.id,
           title: data.title,
-          calendarId: event.calendarId,
+          calendarId: Number(data.calendarId),
           description: data.description || '',
           location: data.location || '',
           start: new Date(data.start).toISOString(),
@@ -123,7 +123,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       } else {
         await createEventMutation.mutateAsync({
           title: data.title,
-          calendarId: activeCalendar?.id || 1,
+          calendarId: Number(data.calendarId) || activeCalendar?.id || 1,
           description: data.description || null,
           location: data.location || null,
           start: new Date(data.start).toISOString(),

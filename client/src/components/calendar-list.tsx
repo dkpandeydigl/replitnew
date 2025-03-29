@@ -17,6 +17,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +30,12 @@ const calendarFormSchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
 });
 
+const createCalendarSchema = z.object({
+  name: z.string().min(1, 'Calendar name is required').regex(/^[a-zA-Z0-9._-]+$/, 'Allowed Characters - [Letters, digits, _, -, and .]'),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
+});
+
+
 export default function CalendarList() {
   const { 
     calendars, 
@@ -39,13 +46,15 @@ export default function CalendarList() {
     servers,
     serversLoading,
     discoverCalendarsMutation,
-    updateCalendarMutation
+    updateCalendarMutation,
+    createCalendarMutation
   } = useCalDAV();
-  
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedCalendar, setSelectedCalendar] = useState<Calendar | null>(null);
   const { toast } = useToast();
-  
+
   const form = useForm<z.infer<typeof calendarFormSchema>>({
     resolver: zodResolver(calendarFormSchema),
     defaultValues: {
@@ -53,7 +62,15 @@ export default function CalendarList() {
       color: '#3B82F6'
     }
   });
-  
+
+  const createForm = useForm<z.infer<typeof createCalendarSchema>>({
+    resolver: zodResolver(createCalendarSchema),
+    defaultValues: {
+      name: '',
+      color: '#3B82F6'
+    }
+  });
+
   useEffect(() => {
     if (selectedCalendar) {
       form.reset({
@@ -62,7 +79,7 @@ export default function CalendarList() {
       });
     }
   }, [selectedCalendar, form]);
-  
+
   const handleRefreshCalendars = () => {
     if (servers && servers.length > 0) {
       servers.forEach(server => {
@@ -76,16 +93,16 @@ export default function CalendarList() {
       });
     }
   };
-  
+
   const handleCalendarSelect = (calendar: Calendar) => {
     setActiveCalendar(calendar);
   };
-  
+
   const handleEditCalendar = (calendar: Calendar) => {
     setSelectedCalendar(calendar);
     setIsEditDialogOpen(true);
   };
-  
+
   const handleUpdateCalendar = (values: z.infer<typeof calendarFormSchema>) => {
     if (selectedCalendar) {
       updateCalendarMutation.mutate({
@@ -95,10 +112,21 @@ export default function CalendarList() {
       setIsEditDialogOpen(false);
     }
   };
-  
-  const handleAddCalendar = () => {
+
+  const handleCreateCalendar = (values: z.infer<typeof createCalendarSchema>) => {
     if (servers && servers.length > 0) {
-      handleRefreshCalendars();
+      createCalendarMutation.mutate(
+        { serverId: servers[0].id, data: values },
+        {
+          onSuccess: () => {
+            setIsCreateDialogOpen(false);
+            toast({ title: 'Calendar created successfully!' });
+          },
+          onError: (error) => {
+            toast({ title: 'Error creating calendar', description: error.message, variant: 'destructive' });
+          },
+        }
+      );
     } else {
       toast({
         title: "No servers connected",
@@ -107,7 +135,11 @@ export default function CalendarList() {
       });
     }
   };
-  
+
+  const handleAddCalendar = () => {
+    setIsCreateDialogOpen(true);
+  };
+
   return (
     <>
       <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
@@ -126,7 +158,7 @@ export default function CalendarList() {
             <span className="sr-only">Resync Calendars</span>
           </Button>
         </div>
-        
+
         {/* Loading state */}
         {(calendarsLoading || discoverCalendarsMutation.isPending) && (
           <div className="space-y-2">
@@ -135,7 +167,7 @@ export default function CalendarList() {
             <Skeleton className="h-8 w-full" />
           </div>
         )}
-        
+
         {/* Error state */}
         {calendarError && !calendarsLoading && (
           <div className="bg-red-50 p-3 rounded-md mb-3">
@@ -152,7 +184,7 @@ export default function CalendarList() {
             </Button>
           </div>
         )}
-        
+
         {/* Calendars list */}
         {!calendarsLoading && !discoverCalendarsMutation.isPending && calendars && calendars.length === 0 && (
           <div className="text-center py-4 text-gray-500">
@@ -167,7 +199,7 @@ export default function CalendarList() {
             </Button>
           </div>
         )}
-        
+
         {calendars && calendars.length > 0 && (
           <div className="space-y-1 mt-2">
             {calendars.map((calendar) => (
@@ -201,7 +233,7 @@ export default function CalendarList() {
             ))}
           </div>
         )}
-        
+
         <Button 
           variant="link" 
           size="sm" 
@@ -212,14 +244,14 @@ export default function CalendarList() {
           Add Calendar
         </Button>
       </div>
-      
+
       {/* Edit calendar dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Calendar</DialogTitle>
           </DialogHeader>
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleUpdateCalendar)} className="space-y-4">
               <FormField
@@ -234,7 +266,7 @@ export default function CalendarList() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="color"
@@ -253,7 +285,7 @@ export default function CalendarList() {
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
                 <Button 
                   type="button" 
@@ -267,6 +299,70 @@ export default function CalendarList() {
                   disabled={updateCalendarMutation.isPending}
                 >
                   {updateCalendarMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create calendar dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Calendar</DialogTitle>
+          </DialogHeader>
+
+          <Form {...createForm}>
+            <form onSubmit={createForm.handleSubmit(handleCreateCalendar)} className="space-y-4">
+              <FormField
+                control={createForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Calendar Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Allowed Characters - [Letters, digits, _, -, and .]
+                    </FormDescription>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={createForm.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Color</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-6 h-6 rounded-full border"
+                        style={{ backgroundColor: field.value }}
+                      />
+                      <FormControl>
+                        <Input {...field} type="color" className="w-14 h-8 p-0" />
+                      </FormControl>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={createCalendarMutation.isPending}
+                >
+                  {createCalendarMutation.isPending ? "Creating..." : "Create"}
                 </Button>
               </DialogFooter>
             </form>

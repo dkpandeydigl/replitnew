@@ -1,6 +1,7 @@
+
 import React, { createContext, useContext, useState } from 'react';
-import type { Server, Calendar } from '@/lib/types';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import type { Server, Calendar } from '@/lib/types';
 
 interface CalDAVContextType {
   servers: Server[];
@@ -8,6 +9,7 @@ interface CalDAVContextType {
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
   connectServerMutation: any;
+  serversLoading: boolean;
 }
 
 const CalDAVContext = createContext<CalDAVContextType>({
@@ -15,7 +17,11 @@ const CalDAVContext = createContext<CalDAVContextType>({
   calendars: [],
   refreshCalendars: async () => {},
   refreshServers: async () => {},
-  connectServerMutation: null,
+  connectServerMutation: {
+    isPending: false,
+    mutate: async () => {}
+  },
+  serversLoading: false
 });
 
 export function useCalDAV() {
@@ -29,6 +35,7 @@ export function useCalDAV() {
 export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   const [servers, setServers] = useState<Server[]>([]);
   const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [serversLoading, setServersLoading] = useState(false);
 
   const connectServerMutation = useMutation({
     mutationFn: async (serverData: any) => {
@@ -39,13 +46,18 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       });
       if (!response.ok) throw new Error('Failed to connect to server');
       return response.json();
-    },
+    }
   });
 
   const refreshServers = async () => {
-    const response = await fetch('/api/servers');
-    const data = await response.json();
-    setServers(data);
+    setServersLoading(true);
+    try {
+      const response = await fetch('/api/servers');
+      const data = await response.json();
+      setServers(data);
+    } finally {
+      setServersLoading(false);
+    }
   };
 
   const refreshCalendars = async () => {
@@ -60,7 +72,8 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       calendars, 
       refreshCalendars, 
       refreshServers,
-      connectServerMutation 
+      connectServerMutation,
+      serversLoading
     }}>
       {children}
     </CalDAVContext.Provider>

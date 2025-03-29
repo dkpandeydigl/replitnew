@@ -68,8 +68,16 @@ export default function AuthPage() {
     },
   });
 
-  const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
-    loginMutation.mutate(values);
+  const onLoginSubmit = async (values: z.infer<typeof loginSchema>) => {
+    try {
+      await loginMutation.mutateAsync(values);
+    } catch (error) {
+      console.error('Login failed:', error);
+      loginForm.setError('root', {
+        type: 'manual',
+        message: 'Login failed. Please check your credentials.'
+      });
+    }
   };
 
   // Register form
@@ -129,6 +137,7 @@ export default function AuthPage() {
                               placeholder="Enter your username"
                               {...field}
                               autoComplete="username"
+                              required
                             />
                           </FormControl>
                           <FormMessage />
@@ -147,6 +156,7 @@ export default function AuthPage() {
                                 type={showLoginPassword ? "text" : "password"}
                                 placeholder="Enter your password"
                                 {...field}
+                                required
                                 autoComplete="current-password"
                                 className="pr-10"
                               />

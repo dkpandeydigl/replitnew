@@ -1,26 +1,62 @@
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface CalDAVContextType {
+  events: any[];
+  eventsLoading: boolean;
+  eventError: Error | null;
+  activeCalendar: any | null;
+  calendars: any[];
+  viewType: string;
   servers: any[];
+  setDateRange: (start: Date, end: Date) => void;
   setServers: (servers: any[]) => void;
-  activeServer: any | null;
-  setActiveServer: (server: any | null) => void;
+  setActiveCalendar: (calendar: any) => void;
 }
 
-const CalDAVContext = createContext<CalDAVContextType>({
+const defaultContext: CalDAVContextType = {
+  events: [],
+  eventsLoading: false,
+  eventError: null,
+  activeCalendar: null,
+  calendars: [],
+  viewType: 'month',
   servers: [],
+  setDateRange: () => {},
   setServers: () => {},
-  activeServer: null,
-  setActiveServer: () => {},
-});
+  setActiveCalendar: () => {}
+};
 
-export function CalDAVProvider({ children }: { children: React.ReactNode }) {
+const CalDAVContext = createContext<CalDAVContextType>(defaultContext);
+
+export function CalDAVProvider({ children }: { children: ReactNode }) {
+  const [events, setEvents] = useState<any[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventError, setEventError] = useState<Error | null>(null);
+  const [activeCalendar, setActiveCalendar] = useState<any | null>(null);
+  const [calendars, setCalendars] = useState<any[]>([]);
+  const [viewType, setViewType] = useState('month');
   const [servers, setServers] = useState<any[]>([]);
-  const [activeServer, setActiveServer] = useState<any | null>(null);
+
+  const setDateRange = (start: Date, end: Date) => {
+    // Implement date range logic here
+  };
 
   return (
-    <CalDAVContext.Provider value={{ servers, setServers, activeServer, setActiveServer }}>
+    <CalDAVContext.Provider 
+      value={{
+        events,
+        eventsLoading,
+        eventError,
+        activeCalendar,
+        calendars,
+        viewType,
+        servers,
+        setDateRange,
+        setServers,
+        setActiveCalendar
+      }}
+    >
       {children}
     </CalDAVContext.Provider>
   );

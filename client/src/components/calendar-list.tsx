@@ -32,16 +32,18 @@ const calendarFormSchema = z.object({
 
 const createCalendarSchema = z.object({
   name: z.string().min(1, 'Calendar name is required').regex(/^[a-zA-Z0-9._-]+$/, 'Allowed Characters - [Letters, digits, _, -, and .]'),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color'),
-  serverId: z.number().min(1, 'Server is required')
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
 });
 
 async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
   try {
+    if (!servers || servers.length === 0) {
+      throw new Error("No servers available");
+    }
     await createCalendarMutation.mutateAsync({
       name: data.name,
       color: data.color,
-      serverId: data.serverId
+      serverId: servers[0].id
     });
     setIsCreateDialogOpen(false);
     createForm.reset();
@@ -370,18 +372,7 @@ export default function CalendarList() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={createForm.control}
-                name="serverId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Server</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="number" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              
 
               <DialogFooter>
                 <Button 

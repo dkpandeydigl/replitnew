@@ -141,26 +141,36 @@ export default function CalendarList() {
   };
 
   async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
-    try {
-      if (!servers || servers.length === 0) {
-        throw new Error("No servers available");
-      }
+    if (!servers || servers.length === 0) {
+      toast({
+        title: "Error",
+        description: "No servers available to create calendar",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    try {
       await createCalendarMutation.mutateAsync({
         name: data.name,
         color: data.color,
-        serverId: servers[0].id
+        serverId: servers[0].id,
+        url: servers[0].url
       });
 
       setIsCreateDialogOpen(false);
       createForm.reset();
-    } catch (error: any) {
+
+      toast({
+        title: "Success",
+        description: "Calendar created successfully"
+      });
+    } catch (error) {
       console.error('Failed to create calendar:', error);
-      const errorMessage = error.response?.data?.message || "Failed to create calendar. Please try again.";
       toast({
         title: "Error",
-        description: errorMessage,
-        variant: "destructive"
+        description: "Failed to create calendar. Please try again.",
+        variant: "destructive",
       });
     }
   }

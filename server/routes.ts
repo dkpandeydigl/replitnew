@@ -302,12 +302,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const caldav = new CalDAVClient(serverUrl, auth);
         const caldavEvents = await caldav.getEvents(calendar.url, start, end);
+        console.log(`Retrieved ${caldavEvents.length} events from CalDAV server`);
 
         // Sync with our database
         const events = [];
+        const errors = [];
 
-        try {
-          for (const caldavEvent of caldavEvents) {
+        for (const caldavEvent of caldavEvents) {
             try {
               let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
 

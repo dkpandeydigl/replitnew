@@ -399,22 +399,26 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
 
   // Auto-discover calendars periodically and when servers change
   useEffect(() => {
-    if (servers.length > 0) {
-      // Initial discovery
-      servers.forEach(server => {
-        discoverCalendarsMutation.mutate(server.id);
-      });
+    if (servers?.length > 0 && !discoverCalendarsMutation.isLoading) {
+      const discoverCalendars = async () => {
+        try {
+          for (const server of servers) {
+            await discoverCalendarsMutation.mutateAsync(server.id);
+          }
+        } catch (error) {
+          console.error('Calendar discovery error:', error);
+        }
+      };
 
-      // Set up periodic discovery
-      const discoveryInterval = setInterval(() => {
-        servers.forEach(server => {
-          discoverCalendarsMutation.mutate(server.id);
-        });
-      }, 30000); // Check every 30 seconds
+      // Initial discovery
+      discoverCalendars();
+
+      // Set up less frequent periodic discovery
+      const discoveryInterval = setInterval(discoverCalendars, 300000); // Check every 5 minutes
 
       return () => clearInterval(discoveryInterval);
     }
-  }, [servers, discoverCalendarsMutation]);
+  }, [servers]);
 
   // Refresh calendars when discovery succeeds
   useEffect(() => {

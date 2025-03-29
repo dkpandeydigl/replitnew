@@ -536,6 +536,26 @@ class CalDAVClient {
     }
   }
 
+  async createCalendar(url: string, displayName: string, color: string): Promise<void> {
+    await this.client.request({
+      method: 'MKCALENDAR',
+      url,
+      data: `<?xml version="1.0" encoding="utf-8" ?>
+        <C:mkcalendar xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav" xmlns:A="http://apple.com/ns/ical/">
+          <D:set>
+            <D:prop>
+              <D:displayname>${displayName}</D:displayname>
+              <A:calendar-color>${color}</A:calendar-color>
+            </D:prop>
+          </D:set>
+        </C:mkcalendar>`,
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8'
+      }
+    });
+  }
+
+
   // Helper method to parse ICS data
   private parseICSEvent(icsData: string, url: string): CalDAVEvent | null {
     try {

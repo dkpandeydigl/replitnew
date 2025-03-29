@@ -238,36 +238,40 @@ export default function CalendarList() {
         )}
 
         {/* Calendars list */}
-        {!calendarsLoading && !discoverCalendarsMutation.isLoading && calendars && calendars.length > 0 && (
-          <div className="space-y-2">
-            {calendars.map((calendar) => (
-              <div
-                key={calendar.id}
-                className={`flex items-center p-2 rounded-lg cursor-pointer ${
-                  activeCalendar?.id === calendar.id ? 'bg-primary/10' : 'hover:bg-gray-100'
-                }`}
-                onClick={() => setActiveCalendar(calendar)}
-              >
-                <div
-                  className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: calendar.color }}
-                />
-                <span className="text-sm truncate">{calendar.name}</span>
+        {!calendarsLoading && !discoverCalendarsMutation.isLoading && calendars && (
+          <>
+            {calendars.length > 0 ? (
+              <div className="space-y-2">
+                {calendars.map((calendar) => (
+                  <div
+                    key={calendar.id}
+                    className={`flex items-center p-2 rounded-lg cursor-pointer ${
+                      activeCalendar?.id === calendar.id ? 'bg-primary/10' : 'hover:bg-gray-100'
+                    }`}
+                    onClick={() => setActiveCalendar(calendar)}
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full mr-2"
+                      style={{ backgroundColor: calendar.color }}
+                    />
+                    <span className="text-sm truncate">{calendar.name}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}& calendars && calendars.length === 0 && (
+            ) : (
           <div className="text-center py-4 text-gray-500">
-            <p className="text-sm">No calendars found</p>
-            <Button 
-              variant="link" 
-              size="sm" 
-              className="text-primary mt-1"
-              onClick={handleRefreshCalendars}
-            >
-              Resync calendars
-            </Button>
-          </div>
+                <p className="text-sm">No calendars found</p>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="text-primary mt-1"
+                  onClick={handleRefreshCalendars}
+                >
+                  Resync calendars
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {calendars && calendars.length > 0 && (

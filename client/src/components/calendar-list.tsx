@@ -32,7 +32,8 @@ const calendarFormSchema = z.object({
 
 const createCalendarSchema = z.object({
   name: z.string().min(1, 'Calendar name is required').regex(/^[a-zA-Z0-9._-]+$/, 'Allowed Characters - [Letters, digits, _, -, and .]'),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color'),
+  serverId: z.number().min(1, 'Server is required')
 });
 
 export default function CalendarList() {
@@ -68,7 +69,7 @@ export default function CalendarList() {
     defaultValues: {
       name: '',
       color: '#3B82F6',
-      serverId: undefined
+      serverId: servers?.[0]?.id || 0
     }
   });
 
@@ -356,6 +357,30 @@ export default function CalendarList() {
                     <FormDescription>
                       Allowed Characters - [Letters, digits, _, -, and .]
                     </FormDescription>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={createForm.control}
+                name="serverId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Server</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                        {...field}
+                        value={field.value}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      >
+                        {servers?.map((server) => (
+                          <option key={server.id} value={server.id}>
+                            {server.url}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
                   </FormItem>
                 )}
               />

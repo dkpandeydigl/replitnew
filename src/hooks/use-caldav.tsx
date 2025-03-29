@@ -23,6 +23,9 @@ const CalDAVContext = createContext<CalDAVContextType>({
   connectServerMutation: {
     isPending: false,
     mutate: () => {},
+    isLoading: false,
+    isError: false,
+    error: null,
   },
   serversLoading: false
 });

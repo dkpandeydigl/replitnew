@@ -145,20 +145,15 @@ export default function CalendarList() {
       if (!servers || servers.length === 0) {
         throw new Error("No servers available");
       }
-      
+
       await createCalendarMutation.mutateAsync({
         name: data.name,
         color: data.color,
         serverId: servers[0].id
       });
-      
+
       setIsCreateDialogOpen(false);
       createForm.reset();
-
-      if (response) {
-        setIsCreateDialogOpen(false);
-        createForm.reset();
-      }
     } catch (error: any) {
       console.error('Failed to create calendar:', error);
       const errorMessage = error.response?.data?.message || "Failed to create calendar. Please try again.";
@@ -361,7 +356,7 @@ export default function CalendarList() {
                 )}
               />
 
-              
+
 
               <FormField
                 control={createForm.control}

@@ -10,10 +10,11 @@ interface CalDAVContextType {
   calendarsLoading: boolean;
   selectedServer: Server | null;
   setSelectedServer: (server: Server | null) => void;
+  connectServerMutation: any;
   createServerMutation: any;
   deleteServerMutation: any;
   updateCalendarMutation: any;
-  createCalendarMutation: any;
+  createCalendarMutation: any; any;
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
   dateRange: { start: Date; end: Date };
@@ -53,6 +54,21 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Create server mutation
+  const connectServerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/servers/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to connect to server');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchServers();
+    }
+  });
+
   const createServerMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await fetch('/api/servers', {
@@ -117,6 +133,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     calendarsLoading,
     selectedServer,
     setSelectedServer,
+    connectServerMutation,
     createServerMutation,
     deleteServerMutation,
     updateCalendarMutation,

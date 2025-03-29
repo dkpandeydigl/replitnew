@@ -35,30 +35,6 @@ const createCalendarSchema = z.object({
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
 });
 
-async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
-  const { toast } = useToast(); // Added toast hook here
-  try {
-    if (!servers || servers.length === 0) {
-      throw new Error("No servers available");
-    }
-    await createCalendarMutation.mutateAsync({
-      name: data.name,
-      color: data.color,
-      serverId: servers[0].id
-    });
-    setIsCreateDialogOpen(false);
-    createForm.reset();
-  } catch (error) {
-    console.error('Failed to create calendar:', error);
-    toast({
-      title: "Error",
-      description: "Failed to create calendar. Please try again.",
-      variant: "destructive"
-    });
-  }
-}
-
-
 export default function CalendarList() {
   const { toast } = useToast();
   const { 
@@ -164,6 +140,28 @@ export default function CalendarList() {
   const handleAddCalendar = () => {
     setIsCreateDialogOpen(true);
   };
+
+  async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
+    try {
+      if (!servers || servers.length === 0) {
+        throw new Error("No servers available");
+      }
+      await createCalendarMutation.mutateAsync({
+        name: data.name,
+        color: data.color,
+        serverId: servers[0].id
+      });
+      setIsCreateDialogOpen(false);
+      createForm.reset();
+    } catch (error) {
+      console.error('Failed to create calendar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create calendar. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }
 
   return (
     <>

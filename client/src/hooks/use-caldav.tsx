@@ -1,5 +1,6 @@
-import { createContext, useContext, useCallback } from 'react';
-import { type Server, type Calendar } from '@shared/schema';
+
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import type { Server, Calendar } from '@/lib/types';
 
 interface CalDAVContextType {
   servers: Server[];
@@ -8,14 +9,7 @@ interface CalDAVContextType {
   refreshServers: () => Promise<void>;
 }
 
-const defaultContextValue: CalDAVContextType = {
-  servers: [],
-  calendars: [],
-  refreshCalendars: async () => {},
-  refreshServers: async () => {},
-};
-
-export const CalDAVContext = createContext<CalDAVContextType>(defaultContextValue);
+const CalDAVContext = createContext<CalDAVContextType | undefined>(undefined);
 
 export function useCalDAV() {
   const context = useContext(CalDAVContext);
@@ -30,32 +24,33 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   const [calendars, setCalendars] = useState<Calendar[]>([]);
 
   const refreshCalendars = useCallback(async () => {
-    // Placeholder for fetching calendars
     try {
-        const mockCalendars = [
-          {id: 1, name: 'Calendar 1'},
-          {id: 2, name: 'Calendar 2'}
-        ]; // Replace with actual API call
-        setCalendars(mockCalendars);
-      } catch(e) {
-        console.error("Error refreshing calendars", e);
-      }
+      const response = await fetch('/api/calendars');
+      if (!response.ok) throw new Error('Failed to fetch calendars');
+      const data = await response.json();
+      setCalendars(data);
+    } catch (error) {
+      console.error('Error refreshing calendars:', error);
+    }
   }, []);
 
   const refreshServers = useCallback(async () => {
-    // Placeholder for fetching servers
     try {
-        const mockServers = [
-          {id: 1, url: 'http://example.com'},
-          {id: 2, url: 'http://another-example.com'}
-        ]; // Replace with actual API call
-        setServers(mockServers);
-      } catch(e) {
-        console.error("Error refreshing servers", e);
-      }
+      const response = await fetch('/api/servers');
+      if (!response.ok) throw new Error('Failed to fetch servers');
+      const data = await response.json();
+      setServers(data);
+    } catch (error) {
+      console.error('Error refreshing servers:', error);
+    }
   }, []);
 
-  const value = { servers, calendars, refreshCalendars, refreshServers };
+  const value = {
+    servers,
+    calendars,
+    refreshCalendars,
+    refreshServers
+  };
 
   return (
     <CalDAVContext.Provider value={value}>

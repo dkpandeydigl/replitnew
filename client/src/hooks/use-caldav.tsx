@@ -70,7 +70,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
 
   const connectServerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch('/api/servers/connect', {
+      const response = await fetch('/api/servers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -78,8 +78,10 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       if (!response.ok) throw new Error('Failed to connect to server');
       return response.json();
     },
-    onSuccess: () => {
-      refetchServers();
+    onSuccess: async (data) => {
+      await refetchServers();
+      // Discover calendars after successful connection
+      discoverCalendarsMutation.mutate({ serverId: data.id });
     }
   });
 

@@ -41,9 +41,36 @@ type CalDAVContextType = {
   setViewType: (type: string) => void;
 };
 
-export const CalDAVContext = createContext<CalDAVContextType>({} as CalDAVContextType);
+const defaultContextValue: CalDAVContextType = {
+  servers: [],
+  serversLoading: false,
+  serverError: null,
+  calendars: [],
+  calendarsLoading: false,
+  calendarError: null,
+  activeCalendar: null,
+  setActiveCalendar: () => {},
+  events: [],
+  eventsLoading: false,
+  eventError: null,
+  connectServerMutation: null,
+  deleteServerMutation: null,
+  discoverCalendarsMutation: null,
+  updateCalendarMutation: null,
+  deleteCalendarMutation: null,
+  createCalendarMutation: null,
+  createEventMutation: null,
+  updateEventMutation: null,
+  deleteEventMutation: null,
+  dateRange: { start: null, end: null },
+  setDateRange: () => {},
+  viewType: 'dayGridMonth',
+  setViewType: () => {}
+};
 
-export function CalDAVProvider({ children }: { children: ReactNode }) {
+const CalDAVContext = createContext<CalDAVContextType>(defaultContextValue);
+
+function CalDAVProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
   const [activeCalendar, setActiveCalendar] = useState<Calendar | null>(null);
@@ -394,4 +421,4 @@ function useCalDAV() {
   return context;
 }
 
-export { CalDAVProvider, useCalDAV };
+export { CalDAVProvider, useCalDAV, CalDAVContext };

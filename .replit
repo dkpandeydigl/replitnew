@@ -10,7 +10,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "npm run dev"]
 
 [workflows]
-runButton = "Clean Start"
+runButton = "Fresh Dev"
 
 [[workflows.workflow]]
 name = "Project"
@@ -143,6 +143,23 @@ args = "npm install --no-audit --prefer-offline"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "NODE_ENV=development npm run dev"
+
+[[workflows.workflow]]
+name = "Fresh Dev"
+author = 40353357
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "rm -rf node_modules"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install --no-audit --prefer-offline"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=development VITE_CJS_TRACE=true npm run dev"
 
 [[ports]]
 localPort = 5000

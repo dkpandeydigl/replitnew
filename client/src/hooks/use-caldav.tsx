@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Server, Calendar } from '@/lib/types';
@@ -14,6 +13,8 @@ interface CalDAVContextType {
   createCalendarMutation: any;
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
+  dateRange: { start: Date; end: Date };
+  setDateRange: (dateRange: { start: Date; end: Date }) => void;
 }
 
 export const CalDAVContext = createContext<CalDAVContextType | null>(null);
@@ -28,6 +29,10 @@ export function useCalDAV() {
 
 export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
+    start: new Date(),
+    end: new Date()
+  });
 
   const { data: servers = [], isLoading: serversLoading } = useQuery({
     queryKey: ['servers'],
@@ -92,7 +97,9 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     updateCalendarMutation,
     createCalendarMutation,
     refreshCalendars,
-    refreshServers
+    refreshServers,
+    dateRange,
+    setDateRange
   };
 
   return (

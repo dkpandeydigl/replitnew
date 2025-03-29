@@ -32,8 +32,28 @@ const calendarFormSchema = z.object({
 
 const createCalendarSchema = z.object({
   name: z.string().min(1, 'Calendar name is required').regex(/^[a-zA-Z0-9._-]+$/, 'Allowed Characters - [Letters, digits, _, -, and .]'),
-  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color'),
+  serverId: z.number().min(1, 'Server is required')
 });
+
+async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
+  try {
+    await createCalendarMutation.mutateAsync({
+      name: data.name,
+      color: data.color,
+      serverId: data.serverId
+    });
+    setIsCreateDialogOpen(false);
+    createForm.reset();
+  } catch (error) {
+    console.error('Failed to create calendar:', error);
+    toast({
+      title: "Error",
+      description: "Failed to create calendar. Please try again.",
+      variant: "destructive"
+    });
+  }
+}
 
 
 export default function CalendarList() {

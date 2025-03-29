@@ -500,12 +500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uid: event.uid,
         url: event.url,
         title: validatedData.title,
-        description: validatedData.description || undefined,
-        location: validatedData.location || undefined,
+        description: validatedData.description || '',
+        location: validatedData.location || '',
         start: startDate,
         end: endDate,
-        allDay: validatedData.allDay,
-        recurrence: event.recurrence || undefined
+        allDay: validatedData.allDay
       });
       
       // Update in local database

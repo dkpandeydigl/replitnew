@@ -98,17 +98,13 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       if (event?.id) {
         // Format data according to schema requirements
         const updateData = {
-          id: event.id,
-          data: {
-            title: data.title,
-            calendarId: event.calendarId || activeCalendar?.id || 1,
-            description: data.description || '',
-            location: data.location || '',
-            start: new Date(data.start).toISOString(),
-            end: new Date(data.end).toISOString(),
-            allDay: data.allDay || false,
-            timezone: 'UTC'
-          }
+          title: data.title,
+          calendarId: event.calendarId || activeCalendar?.id || 1,
+          description: data.description || '',
+          location: data.location || '',
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString(),
+          allDay: data.allDay || false
         };
 
         // Debug logging for update

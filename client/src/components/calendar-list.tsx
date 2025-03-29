@@ -47,9 +47,7 @@ export default function CalendarList() {
     serversLoading,
     discoverCalendarsMutation,
     updateCalendarMutation,
-    createCalendarMutation,
-    selectedServer, // Assuming this is added to useCalDAV hook
-    refreshCalendars // Assuming this is a function in useCalDAV hook
+    createCalendarMutation
   } = useCalDAV();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -82,27 +80,15 @@ export default function CalendarList() {
     }
   }, [selectedCalendar, form]);
 
-  const handleRefreshCalendars = async () => {
-    if (!selectedServer) {
-      toast({
-        title: "No server selected",
-        description: "Please select a server first",
-        variant: "destructive"
+  const handleRefreshCalendars = () => {
+    if (servers && servers.length > 0) {
+      servers.forEach(server => {
+        discoverCalendarsMutation.mutate(server.id);
       });
-      return;
-    }
-
-    try {
-      await refreshCalendars();
+    } else {
       toast({
-        title: "Calendars refreshed",
-        description: "Successfully synchronized with the server",
-      });
-    } catch (error) {
-      console.error('Failed to refresh calendars:', error);
-      toast({
-        title: "Refresh failed",
-        description: "Failed to synchronize calendars",
+        title: "No servers connected",
+        description: "Please connect to a CalDAV server first",
         variant: "destructive"
       });
     }
@@ -204,15 +190,15 @@ export default function CalendarList() {
             size="sm" 
             className="text-gray-500 hover:text-primary h-8 w-8 p-0"
             onClick={handleRefreshCalendars}
-            disabled={discoverCalendarsMutation.isLoading || serversLoading}
+            disabled={discoverCalendarsMutation.isPending || serversLoading}
           >
-            <RefreshCw size={16} className={discoverCalendarsMutation.isLoading ? "animate-spin" : ""} />
+            <RefreshCw size={16} className={discoverCalendarsMutation.isPending ? "animate-spin" : ""} />
             <span className="sr-only">Resync Calendars</span>
           </Button>
         </div>
 
         {/* Loading state */}
-        {(calendarsLoading || discoverCalendarsMutation.isLoading) && (
+        {(calendarsLoading || discoverCalendarsMutation.isPending) && (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
@@ -238,75 +224,18 @@ export default function CalendarList() {
         )}
 
         {/* Calendars list */}
-        {!calendarsLoading && !discoverCalendarsMutation.isLoading && calendars && calendars.length > 0 && (
-          <div className="space-y-2">
-            {calendars.map((calendar) => (
-              <button
-                key={calendar.id}
-                onClick={() => setActiveCalendar(calendar)}
-                className={cn(
-                  "w-full flex items-center p-2 rounded-md transition-colors",
-                  activeCalendar?.id === calendar.id
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-muted"
-                )}
-              >
-                <div
-                  className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: calendar.color }}
-                />
-                <span className="truncate">{calendar.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {!calendarsLoading && !discoverCalendarsMutation.isLoading && (!calendars || calendars.length === 0) && (
-          <div className="text-center p-4">
-            <p className="text-sm text-gray-500">No calendars found</p>
+        {!calendarsLoading && !discoverCalendarsMutation.isPending && calendars && calendars.length === 0 && (
+          <div className="text-center py-4 text-gray-500">
+            <p className="text-sm">No calendars found</p>
             <Button 
               variant="link" 
               size="sm" 
-              className="text-xs text-primary p-0 h-auto mt-1"
+              className="text-primary mt-1"
               onClick={handleRefreshCalendars}
             >
-              Refresh Calendars
+              Resync calendars
             </Button>
           </div>
-        )}& calendars && (
-          <>
-            {calendars.length > 0 ? (
-              <div className="space-y-2">
-                {calendars.map((calendar) => (
-                  <div
-                    key={calendar.id}
-                    className={`flex items-center p-2 rounded-lg cursor-pointer ${
-                      activeCalendar?.id === calendar.id ? 'bg-primary/10' : 'hover:bg-gray-100'
-                    }`}
-                    onClick={() => setActiveCalendar(calendar)}
-                  >
-                    <div
-                      className="w-3 h-3 rounded-full mr-2"
-                      style={{ backgroundColor: calendar.color }}
-                    />
-                    <span className="text-sm truncate">{calendar.name}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-          <div className="text-center py-4 text-gray-500">
-                <p className="text-sm">No calendars found</p>
-                <Button 
-                  variant="link" 
-                  size="sm" 
-                  className="text-primary mt-1"
-                  onClick={handleRefreshCalendars}
-                >
-                  Resync calendars
-                </Button>
-              </div>
-            )}
-          </>
         )}
 
         {calendars && calendars.length > 0 && (
@@ -405,9 +334,9 @@ export default function CalendarList() {
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={updateCalendarMutation.isLoading}
+                  disabled={updateCalendarMutation.isPending}
                 >
-                  {updateCalendarMutation.isLoading ? "Saving..." : "Save Changes"}
+                  {updateCalendarMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </DialogFooter>
             </form>

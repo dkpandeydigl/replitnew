@@ -302,44 +302,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const caldav = new CalDAVClient(serverUrl, auth);
         const caldavEvents = await caldav.getEvents(calendar.url, start, end);
-        console.log(`Retrieved ${caldavEvents.length} events from CalDAV server`);
 
         // Sync with our database
         const events = [];
-        const errors = [];
 
-        for (const caldavEvent of caldavEvents) {
-          try {
-            let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
+        try {
+          for (const caldavEvent of caldavEvents) {
+            try {
+              let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
 
-            if (!event) {
-              // Create new event in our database
-              event = await storage.createEvent({
-                userId,
-                calendarId,
-                uid: caldavEvent.uid,
-                url: caldavEvent.url,
-                title: caldavEvent.title,
-                description: caldavEvent.description || null,
-                location: caldavEvent.location || null,
-                start: caldavEvent.start,
-                end: caldavEvent.end,
-                allDay: caldavEvent.allDay,
-                recurrence: caldavEvent.recurrence || null,
-                metadata: caldavEvent.metadata || null
-              });
+              if (!event) {
+                // Create new event in our database
+                event = await storage.createEvent({
+                  userId,
+                  calendarId,
+                  uid: caldavEvent.uid,
+                  url: caldavEvent.url,
+                  title: caldavEvent.title,
+                  description: caldavEvent.description || null,
+                  location: caldavEvent.location || null,
+                  start: caldavEvent.start,
+                  end: caldavEvent.end,
+                  allDay: caldavEvent.allDay,
+                  recurrence: caldavEvent.recurrence || null,
+                  metadata: caldavEvent.metadata || null
+                });
+              }
+
+              events.push(event);
+            } catch (eventError) {
+              console.error('Error processing individual event:', eventError);
+              // Continue with other events even if one fails
+              continue;
             }
-
-            events.push(event);
-          } catch (error) {
-            console.error('Error processing individual event:', error);
-            // Continue with other events even if one fails
-            continue;
           }
-        }
 
-        // Return empty array if no events found
-        res.json(events);
+          // Return empty array if no events found
+          res.json(events);
+        } catch (eventsError) {
+          console.error('Error processing events batch:', eventsError);
+          res.json([]);  // Return empty array instead of error for new calendars
+        }
       } else {
         // Fetch from local database
         const events = await storage.getEvents(userId, calendarId);
@@ -606,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const cal of discoveredCalendars) {
         discovered++;
-        const existingCal = await storage.getCalendars(req.user.id).then(cals =>
+        const existingCal = await storage.getCalendars(req.user.id).then(cals => 
           cals.find(c => c.url === cal.url)
         );
 

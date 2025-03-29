@@ -225,9 +225,9 @@ export default function ServerConnection() {
             <Button 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90"
-              disabled={connectServerMutation.isLoading}
+              disabled={connectServerMutation.isPending}
             >
-              {connectServerMutation.isLoading ? (
+              {connectServerMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connecting...

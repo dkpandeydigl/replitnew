@@ -238,7 +238,42 @@ export default function CalendarList() {
         )}
 
         {/* Calendars list */}
-        {!calendarsLoading && !discoverCalendarsMutation.isLoading && calendars && (
+        {!calendarsLoading && !discoverCalendarsMutation.isLoading && calendars && calendars.length > 0 && (
+          <div className="space-y-2">
+            {calendars.map((calendar) => (
+              <button
+                key={calendar.id}
+                onClick={() => setActiveCalendar(calendar)}
+                className={cn(
+                  "w-full flex items-center p-2 rounded-md transition-colors",
+                  activeCalendar?.id === calendar.id
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted"
+                )}
+              >
+                <div
+                  className="w-3 h-3 rounded-full mr-2"
+                  style={{ backgroundColor: calendar.color }}
+                />
+                <span className="truncate">{calendar.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!calendarsLoading && !discoverCalendarsMutation.isLoading && (!calendars || calendars.length === 0) && (
+          <div className="text-center p-4">
+            <p className="text-sm text-gray-500">No calendars found</p>
+            <Button 
+              variant="link" 
+              size="sm" 
+              className="text-xs text-primary p-0 h-auto mt-1"
+              onClick={handleRefreshCalendars}
+            >
+              Refresh Calendars
+            </Button>
+          </div>
+        )}& calendars && (
           <>
             {calendars.length > 0 ? (
               <div className="space-y-2">

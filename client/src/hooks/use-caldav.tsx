@@ -46,9 +46,13 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     queryFn: async () => {
       const response = await fetch('/api/calendars');
       if (!response.ok) throw new Error('Failed to fetch calendars');
-      return response.json();
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
-    enabled: true // Always fetch calendars when component mounts
+    enabled: true,
+    retry: 3,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Connect server mutation

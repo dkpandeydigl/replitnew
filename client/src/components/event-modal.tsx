@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { useCalDAV } from "@/hooks/use-caldav";
 import { useToast } from "@/hooks/use-toast";
 import { EventFormData, eventFormSchema } from "@shared/schema";
-import type { Event } from "@shared/schema";
+import type { Event, Calendar } from "@shared/schema";
 import { addHours } from "date-fns";
 
 interface EventModalProps {
@@ -19,7 +19,7 @@ interface EventModalProps {
 }
 
 export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { activeCalendar, createEventMutation, updateEventMutation, deleteEventMutation } = useCalDAV();
+  const { activeCalendar, calendars, createEventMutation, updateEventMutation, deleteEventMutation } = useCalDAV();
   const { toast } = useToast();
   const prevEventRef = useRef<string | null>(null);
 
@@ -231,9 +231,21 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               name="calendarId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Calendar ID</FormLabel>
+                  <FormLabel>Calendar</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      {...field}
+                      value={field.value || ''}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    >
+                      <option value="">Select a calendar</option>
+                      {calendars.map((cal) => (
+                        <option key={cal.id} value={cal.id}>
+                          {cal.name}
+                        </option>
+                      ))}
+                    </select>
                   </FormControl>
                 </FormItem>
               )}

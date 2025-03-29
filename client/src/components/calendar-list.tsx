@@ -360,9 +360,9 @@ export default function CalendarList() {
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={createCalendarMutation.isPending}
-                >
-                  {createCalendarMutation.isPending ? "Creating..." : "Create"}
+                  disabled={createCalendarMutation.isLoading}
+                  >
+                    {createCalendarMutation.isLoading ? "Creating..." : "Create"}
                 </Button>
               </DialogFooter>
             </form>

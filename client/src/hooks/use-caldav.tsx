@@ -304,19 +304,30 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
 
   const createCalendarMutation = useMutation({
     mutationFn: async (data: InsertCalendar) => {
-      const response = await apiRequest('POST', '/api/calendars', data);
-      
-      if (!response.ok) {
+      try {
+        const response = await apiRequest('POST', '/api/calendars', data);
         const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          throw new Error(errorData.message);
-        } else {
-          throw new Error('Failed to create calendar');
+        
+        if (!response.ok) {
+          if (contentType?.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to create calendar');
+          } else {
+            const text = await response.text();
+            console.error('Server returned non-JSON response:', text);
+            throw new Error('Server error: Failed to create calendar');
+          }
         }
+        
+        if (!contentType?.includes('application/json')) {
+          throw new Error('Invalid server response: Expected JSON');
+        }
+        
+        return await response.json();
+      } catch (error: any) {
+        console.error('Calendar creation error:', error);
+        throw new Error(error.message || 'Failed to create calendar');
       }
-      
-      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });

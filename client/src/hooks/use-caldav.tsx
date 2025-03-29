@@ -113,10 +113,10 @@ const defaultContextValue: CalDAVContextType = {
 };
 
 // Create context with default values
-export const CalDAVContext = createContext<CalDAVContextType>(defaultContextValue);
+const CalDAVContext = createContext<CalDAVContextType>(defaultContextValue);
 
 // CalDAV Provider
-export function CalDAVProvider({ children }: { children: ReactNode }) {
+function CalDAVProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -469,10 +469,12 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
 }
 
 // Hook to use CalDAV context
-export function useCalDAV() {
+function useCalDAV() {
   const context = useContext(CalDAVContext);
   if (!context) {
     throw new Error('useCalDAV must be used within a CalDAVProvider');
   }
   return context;
 }
+
+export { CalDAVProvider, useCalDAV };

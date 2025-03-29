@@ -87,7 +87,8 @@ export default function CalendarList() {
     resolver: zodResolver(createCalendarSchema),
     defaultValues: {
       name: '',
-      color: '#3B82F6'
+      color: '#3B82F6',
+      serverId: undefined
     }
   });
 
@@ -334,7 +335,7 @@ export default function CalendarList() {
           </DialogHeader>
 
           <Form {...createForm}>
-            <form onSubmit={createForm.handleSubmit(handleCreateCalendar)} className="space-y-4">
+            <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
               <FormField
                 control={createForm.control}
                 name="name"
@@ -366,6 +367,18 @@ export default function CalendarList() {
                         <Input {...field} type="color" className="w-14 h-8 p-0" />
                       </FormControl>
                     </div>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="serverId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Server</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="number" />
+                    </FormControl>
                   </FormItem>
                 )}
               />

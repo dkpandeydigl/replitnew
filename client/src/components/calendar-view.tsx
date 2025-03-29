@@ -142,7 +142,7 @@ export default function CalendarView({ onEventClick, onDateSelect }: CalendarVie
             <h3 className="text-xl font-medium text-gray-800 mb-2">No Calendar Selected</h3>
             <p className="text-gray-600">
               Select a calendar from the sidebar to view and manage your events.
-              {calendars.length === 0 && " If you haven't set up any calendars yet, connect to a CalDAV server first."}
+              {calendars && calendars.length === 0 && " If you haven't set up any calendars yet, connect to a CalDAV server first."}
             </p>
           </div>
         </div>

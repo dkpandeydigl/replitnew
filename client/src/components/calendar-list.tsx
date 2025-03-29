@@ -151,35 +151,28 @@ export default function CalendarList() {
     }
 
     try {
-      const newCalendar = {
+      console.log('Creating calendar with data:', {
         name: data.name,
         color: data.color,
         serverId: servers[0].id,
         userId: servers[0].userId
-      };
-
-      console.log('Creating calendar with data:', newCalendar);
-
-      await createCalendarMutation.mutateAsync(newCalendar);
-      
-      toast({
-        title: "Success",
-        description: "Calendar created successfully"
       });
-      
+
+      await createCalendarMutation.mutateAsync({
+        name: data.name,
+        color: data.color,
+        serverId: servers[0].id,
+        userId: servers[0].userId,
+        url: `${servers[0].url}/calendar/${data.name}`
+      });
+
       setIsCreateDialogOpen(false);
       createForm.reset();
-
-      toast({
-        title: "Success",
-        description: "Calendar created successfully"
-      });
     } catch (error: any) {
       console.error('Failed to create calendar:', error);
-      const errorMessage = error.response?.data?.message || "Failed to create calendar. Please try again.";
       toast({
         title: "Error",
-        description: errorMessage,
+        description: error.message || "Failed to create calendar. Please try again.",
         variant: "destructive",
       });
     }

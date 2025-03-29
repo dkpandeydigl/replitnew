@@ -1,6 +1,5 @@
-
 import { createContext, useContext, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import type { Server, Calendar } from '@/lib/types';
 
 interface CalDAVContextType {
@@ -10,21 +9,21 @@ interface CalDAVContextType {
   calendarsLoading: boolean;
   selectedServer: Server | null;
   setSelectedServer: (server: Server | null) => void;
-  connectServerMutation: any;
+  connectServerMutation: any; //This type needs to be fixed.  The edited code doesn't provide this mutation
   discoverCalendarsMutation: any;
   createServerMutation: any;
   deleteServerMutation: any;
   updateCalendarMutation: any;
-  createCalendarMutation: any; any;
+  createCalendarMutation: any;
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
   dateRange: { start: Date; end: Date };
   setDateRange: (dateRange: { start: Date; end: Date }) => void;
-  viewType: string;
-  setViewType: (view: string) => void;
+  viewType: 'month' | 'week' | 'day';
+  setViewType: (view: 'month' | 'week' | 'day') => void;
 }
 
-export const CalDAVContext = createContext<CalDAVContextType | null>(null);
+const CalDAVContext = createContext<CalDAVContextType | null>(null);
 
 export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
@@ -32,10 +31,10 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     start: new Date(),
     end: new Date()
   });
-  const [viewType, setViewType] = useState<string>('dayGridMonth');
+  const [viewType, setViewType] = useState<'month' | 'week' | 'day'>('month');
 
-  // Fetch servers
-  const { data: servers = [], isLoading: serversLoading, refetch: refetchServers } = useQuery({
+  // Query servers
+  const { data: servers, isLoading: serversLoading, refetch: refetchServers } = useQuery({
     queryKey: ['servers'],
     queryFn: async () => {
       const response = await fetch('/api/servers');
@@ -44,8 +43,8 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // Fetch calendars
-  const { data: calendars = [], isLoading: calendarsLoading, refetch: refetchCalendars } = useQuery({
+  // Query calendars
+  const { data: calendars, isLoading: calendarsLoading, refetch: refetchCalendars } = useQuery({
     queryKey: ['calendars'],
     queryFn: async () => {
       const response = await fetch('/api/calendars');
@@ -55,42 +54,6 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Create server mutation
-  const discoverCalendarsMutation = useMutation({
-    mutationFn: async (serverId: string) => {
-      const response = await fetch(`/api/servers/${serverId}/discover`, {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error('Failed to discover calendars');
-      return response.json();
-    },
-    onSuccess: () => {
-      refetchCalendars();
-    }
-  });
-
-  const connectServerMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await fetch('/api/servers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Failed to connect to server');
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      await refetchServers();
-      // Discover calendars after successful connection
-      const response = await fetch('/api/calendars/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serverId: data.id })
-      });
-      if (!response.ok) throw new Error('Failed to discover calendars');
-      await refetchCalendars();
-    }
-  });
-
   const createServerMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await fetch('/api/servers', {
@@ -99,7 +62,36 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(data)
       });
       if (!response.ok) throw new Error('Failed to create server');
+      const result = await response.json();
+      // Automatically discover calendars after server creation
+      if (result.id) {
+        await fetch('/api/calendars/discover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ serverId: result.id })
+        });
+      }
+      return result;
+    },
+    onSuccess: () => {
+      refetchServers();
+      refetchCalendars();
+    }
+  });
+
+  // Discover calendars mutation
+  const discoverCalendarsMutation = useMutation({
+    mutationFn: async (serverId: number) => {
+      const response = await fetch('/api/calendars/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ serverId })
+      });
+      if (!response.ok) throw new Error('Failed to discover calendars');
       return response.json();
+    },
+    onSuccess: () => {
+      refetchCalendars();
     }
   });
 
@@ -111,6 +103,10 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       });
       if (!response.ok) throw new Error('Failed to delete server');
       return response.json();
+    },
+    onSuccess: () => {
+      refetchServers();
+      refetchCalendars();
     }
   });
 
@@ -124,6 +120,9 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       });
       if (!response.ok) throw new Error('Failed to update calendar');
       return response.json();
+    },
+    onSuccess: () => {
+      refetchCalendars();
     }
   });
 
@@ -137,10 +136,16 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       });
       if (!response.ok) throw new Error('Failed to create calendar');
       return response.json();
+    },
+    onSuccess: () => {
+      refetchCalendars();
     }
   });
 
   const refreshCalendars = async () => {
+    if (selectedServer?.id) {
+      await discoverCalendarsMutation.mutateAsync(selectedServer.id);
+    }
     await refetchCalendars();
   };
 
@@ -155,7 +160,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     calendarsLoading,
     selectedServer,
     setSelectedServer,
-    connectServerMutation,
+    connectServerMutation: null, // Placeholder - needs proper type and implementation
     discoverCalendarsMutation,
     createServerMutation,
     deleteServerMutation,

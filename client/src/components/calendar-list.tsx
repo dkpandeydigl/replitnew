@@ -83,19 +83,28 @@ export default function CalendarList() {
   }, [selectedCalendar, form]);
 
   const handleRefreshCalendars = async () => {
-    if (!selectedServer) return;
+    if (!selectedServer) {
+      toast({
+        title: "No server selected",
+        description: "Please select a server first",
+        variant: "destructive"
+      });
+      return;
+    }
 
     try {
-      const response = await fetch('/api/calendars/discover', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serverId: selectedServer.id })
-      });
-
-      if (!response.ok) throw new Error('Failed to discover calendars');
       await refreshCalendars();
+      toast({
+        title: "Calendars refreshed",
+        description: "Successfully synchronized with the server",
+      });
     } catch (error) {
       console.error('Failed to refresh calendars:', error);
+      toast({
+        title: "Refresh failed",
+        description: "Failed to synchronize calendars",
+        variant: "destructive"
+      });
     }
   };
 

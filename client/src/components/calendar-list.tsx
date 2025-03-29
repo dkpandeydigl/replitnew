@@ -151,12 +151,22 @@ export default function CalendarList() {
     }
 
     try {
-      await createCalendarMutation.mutateAsync({
+      const newCalendar = {
         name: data.name,
         color: data.color,
-        serverId: servers[0].id
-      });
+        serverId: servers[0].id,
+        userId: servers[0].userId
+      };
 
+      console.log('Creating calendar with data:', newCalendar);
+
+      await createCalendarMutation.mutateAsync(newCalendar);
+      
+      toast({
+        title: "Success",
+        description: "Calendar created successfully"
+      });
+      
       setIsCreateDialogOpen(false);
       createForm.reset();
 

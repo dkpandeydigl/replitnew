@@ -304,17 +304,26 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
 
   const createCalendarMutation = useMutation({
     mutationFn: async (data: InsertCalendar) => {
-      const res = await apiRequest('POST', '/api/calendars', data);
-      return await res.json();
+      try {
+        const response = await apiRequest('POST', '/api/calendars', data);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to create calendar');
+        }
+        return await response.json();
+      } catch (error: any) {
+        console.error('Calendar creation error:', error);
+        throw new Error(error.message || 'Failed to create calendar');
+      }
     },
     onSuccess: () => {
-      toast({ title: 'Success', description: 'Calendar created' });
       queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error('Calendar mutation error:', error);
       toast({
         title: 'Failed to create calendar',
-        description: error.message,
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     },

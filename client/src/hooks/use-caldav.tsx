@@ -183,32 +183,6 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
     }
   }, [calendars, activeCalendar]);
 
-  // Auto-discover calendars periodically and when servers change
-  useEffect(() => {
-    if (servers.length > 0) {
-      // Initial discovery
-      servers.forEach(server => {
-        discoverCalendarsMutation.mutate(server.id);
-      });
-
-      // Set up periodic discovery
-      const discoveryInterval = setInterval(() => {
-        servers.forEach(server => {
-          discoverCalendarsMutation.mutate(server.id);
-        });
-      }, 30000); // Check every 30 seconds
-
-      return () => clearInterval(discoveryInterval);
-    }
-  }, [servers, discoverCalendarsMutation]);
-
-  // Refresh calendars when discovery succeeds
-  useEffect(() => {
-    if (discoverCalendarsMutation.isSuccess) {
-      queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
-    }
-  }, [discoverCalendarsMutation.isSuccess]);
-
   // Server mutations
   const connectServerMutation = useMutation({
     mutationFn: async (data: ServerConnectionData) => {
@@ -422,6 +396,32 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+
+  // Auto-discover calendars periodically and when servers change
+  useEffect(() => {
+    if (servers.length > 0) {
+      // Initial discovery
+      servers.forEach(server => {
+        discoverCalendarsMutation.mutate(server.id);
+      });
+
+      // Set up periodic discovery
+      const discoveryInterval = setInterval(() => {
+        servers.forEach(server => {
+          discoverCalendarsMutation.mutate(server.id);
+        });
+      }, 30000); // Check every 30 seconds
+
+      return () => clearInterval(discoveryInterval);
+    }
+  }, [servers, discoverCalendarsMutation]);
+
+  // Refresh calendars when discovery succeeds
+  useEffect(() => {
+    if (discoverCalendarsMutation.isSuccess) {
+      queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
+    }
+  }, [discoverCalendarsMutation.isSuccess]);
 
   const contextValue: CalDAVContextType = {
     servers,

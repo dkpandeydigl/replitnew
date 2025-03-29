@@ -236,12 +236,15 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                     <select
                       className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                       {...field}
-                      value={field.value || ''}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      value={field.value?.toString() || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value ? parseInt(value, 10) : '');
+                      }}
                     >
                       <option value="">Select a calendar</option>
-                      {calendars.map((cal) => (
-                        <option key={cal.id} value={cal.id}>
+                      {calendars?.map((cal) => (
+                        <option key={cal.id} value={cal.id.toString()}>
                           {cal.name}
                         </option>
                       ))}

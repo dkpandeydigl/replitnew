@@ -123,7 +123,7 @@ export default function CalendarList() {
             disabled={discoverCalendarsMutation.isPending || serversLoading}
           >
             <RefreshCw size={16} className={discoverCalendarsMutation.isPending ? "animate-spin" : ""} />
-            <span className="sr-only">Refresh</span>
+            <span className="sr-only">Resync Calendars</span>
           </Button>
         </div>
         
@@ -163,7 +163,7 @@ export default function CalendarList() {
               className="text-primary mt-1"
               onClick={handleRefreshCalendars}
             >
-              Discover calendars
+              Resync calendars
             </Button>
           </div>
         )}

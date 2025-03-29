@@ -174,6 +174,15 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
     }
   });
   
+  // Auto-discover calendars when servers are loaded
+  useEffect(() => {
+    if (servers.length > 0 && !calendarsLoading && calendars.length === 0) {
+      servers.forEach(server => {
+        discoverCalendarsMutation.mutate(server.id);
+      });
+    }
+  }, [servers, calendarsLoading]);
+
   // Set active calendar effect
   useEffect(() => {
     if (calendars.length > 0 && !activeCalendar) {

@@ -9,7 +9,7 @@ interface CalDAVContextType {
   calendarsLoading: boolean;
   selectedServer: Server | null;
   setSelectedServer: (server: Server | null) => void;
-  connectServerMutation: any; //This type needs to be fixed.  The edited code doesn't provide this mutation
+  connectServerMutation: any;
   discoverCalendarsMutation: any;
   createServerMutation: any;
   deleteServerMutation: any;
@@ -50,6 +50,30 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/calendars');
       if (!response.ok) throw new Error('Failed to fetch calendars');
       return response.json();
+    }
+  });
+
+  // Connect server mutation
+  const connectServerMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/servers/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to connect to server');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchServers();
+      refetchCalendars();
+    },
+    onError: (error) => {
+      console.error("Connection error:", error);
+      //Add more sophisticated error handling here if needed.
     }
   });
 
@@ -160,7 +184,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     calendarsLoading,
     selectedServer,
     setSelectedServer,
-    connectServerMutation: null, // Placeholder - needs proper type and implementation
+    connectServerMutation,
     discoverCalendarsMutation,
     createServerMutation,
     deleteServerMutation,

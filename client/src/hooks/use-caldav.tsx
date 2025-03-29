@@ -1,14 +1,17 @@
+
 import { createContext, useContext, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Server, Calendar } from '@/lib/types';
-import axios from 'axios';
 
 interface CalDAVContextType {
   servers: Server[];
   calendars: Calendar[];
   serversLoading: boolean;
-  connectServerMutation: any;
-  discoverCalendarsMutation: any;
+  calendarsLoading: boolean;
+  selectedServer: Server | null;
+  setSelectedServer: (server: Server | null) => void;
+  createServerMutation: any;
+  deleteServerMutation: any;
   updateCalendarMutation: any;
   createCalendarMutation: any;
   refreshCalendars: () => Promise<void>;
@@ -21,82 +24,101 @@ interface CalDAVContextType {
 
 export const CalDAVContext = createContext<CalDAVContextType | null>(null);
 
-export function useCalDAV() {
-  const context = useContext(CalDAVContext);
-  if (!context) {
-    throw new Error('useCalDAV must be used within a CalDAVProvider');
-  }
-  return context;
-}
-
 export function CalDAVProvider({ children }: { children: React.ReactNode }) {
-  const [calendars, setCalendars] = useState<Calendar[]>([]);
+  const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
     start: new Date(),
     end: new Date()
   });
   const [viewType, setViewType] = useState<string>('dayGridMonth');
 
-  const { data: servers = [], isLoading: serversLoading } = useQuery({
+  // Fetch servers
+  const { data: servers = [], isLoading: serversLoading, refetch: refetchServers } = useQuery({
     queryKey: ['servers'],
     queryFn: async () => {
-      const response = await axios.get('/api/servers');
-      return response.data;
+      const response = await fetch('/api/servers');
+      if (!response.ok) throw new Error('Failed to fetch servers');
+      return response.json();
     }
   });
 
-  const connectServerMutation = useMutation({
+  // Fetch calendars
+  const { data: calendars = [], isLoading: calendarsLoading, refetch: refetchCalendars } = useQuery({
+    queryKey: ['calendars'],
+    queryFn: async () => {
+      const response = await fetch('/api/calendars');
+      if (!response.ok) throw new Error('Failed to fetch calendars');
+      return response.json();
+    }
+  });
+
+  // Create server mutation
+  const createServerMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await axios.post('/api/servers/connect', data);
-      return response.data;
+      const response = await fetch('/api/servers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create server');
+      return response.json();
+    }
+  });
+
+  // Delete server mutation
+  const deleteServerMutation = useMutation({
+    mutationFn: async (serverId: number) => {
+      const response = await fetch(`/api/servers/${serverId}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete server');
+      return response.json();
+    }
+  });
+
+  // Update calendar mutation
+  const updateCalendarMutation = useMutation({
+    mutationFn: async ({ id, ...data }: any) => {
+      const response = await fetch(`/api/calendars/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to update calendar');
+      return response.json();
+    }
+  });
+
+  // Create calendar mutation
+  const createCalendarMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/calendars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error('Failed to create calendar');
+      return response.json();
     }
   });
 
   const refreshCalendars = async () => {
-    const response = await axios.get('/api/calendars');
-    setCalendars(response.data);
+    await refetchCalendars();
   };
 
   const refreshServers = async () => {
-    await axios.get('/api/servers');
+    await refetchServers();
   };
-
-  const discoverCalendarsMutation = useMutation({
-    mutationFn: async (serverId: string) => {
-      const response = await axios.post(`/api/servers/${serverId}/discover`);
-      return response.data;
-    },
-    onSuccess: () => {
-      refreshCalendars();
-    }
-  });
-
-  const updateCalendarMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await axios.put(`/api/calendars/${id}`, data);
-      return response.data;
-    },
-    onSuccess: () => {
-      refreshCalendars();
-    }
-  });
-
-  const createCalendarMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await axios.post('/api/calendars', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      refreshCalendars();
-    }
-  });
 
   const value = {
     servers,
     calendars,
     serversLoading,
-    connectServerMutation,
-    discoverCalendarsMutation,
+    calendarsLoading,
+    selectedServer,
+    setSelectedServer,
+    createServerMutation,
+    deleteServerMutation,
     updateCalendarMutation,
     createCalendarMutation,
     refreshCalendars,
@@ -112,4 +134,12 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       {children}
     </CalDAVContext.Provider>
   );
+}
+
+export function useCalDAV() {
+  const context = useContext(CalDAVContext);
+  if (!context) {
+    throw new Error('useCalDAV must be used within a CalDAVProvider');
+  }
+  return context;
 }

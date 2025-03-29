@@ -168,6 +168,7 @@ class CalDAVClient {
         });
 
         // Then get the calendar-home-set
+        log('Fetching calendar-home-set', 'caldav');
         const homeResponse = await this.client.propfind('', {
           data: `<?xml version="1.0" encoding="utf-8" ?>
             <D:propfind xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
@@ -180,6 +181,7 @@ class CalDAVClient {
             'Depth': '0'
           }
         });
+        log('Calendar-home-set response received', 'caldav');
 
         // Finally get the calendars
         response = await this.client.propfind('', {
@@ -468,7 +470,7 @@ class CalDAVClient {
       log(`Updating event: ${event.uid} at URL: ${event.url}`, 'caldav');
 
       const icsData = this.generateICS(event, event.uid);
-      
+
       // Ensure we have the full URL
       const eventUrl = event.url.startsWith('http') ? event.url : new URL(event.url, this.baseUrl).href;
 
@@ -639,24 +641,24 @@ SUMMARY:${event.title}`;
 
     if (event.recurrence?.frequency) {
       let rrule = `FREQ=${event.recurrence.frequency}`;
-      
+
       if (event.recurrence.interval && event.recurrence.interval > 1) {
         rrule += `;INTERVAL=${event.recurrence.interval}`;
       }
-      
+
       if (event.recurrence.count) {
         rrule += `;COUNT=${event.recurrence.count}`;
       }
-      
+
       if (event.recurrence.until) {
         const untilDate = new Date(event.recurrence.until);
         rrule += `;UNTIL=${untilDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`;
       }
-      
+
       if (event.recurrence.byDay && event.recurrence.byDay.length > 0) {
         rrule += `;BYDAY=${event.recurrence.byDay.join(',')}`;
       }
-      
+
       icsData += `\nRRULE:${rrule}`;
     }
 

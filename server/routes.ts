@@ -541,6 +541,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/calendars/discover", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+
+    try {
+      const serverId = parseInt(req.body.serverId);
+      if (isNaN(serverId)) {
+        return res.status(400).json({ message: "Invalid server ID" });
+      }
+
+      const server = await storage.getCaldavServer(serverId);
+      if (!server) {
+        return res.status(404).json({ message: "Server not found" });
+      }
+
+      if (server.userId !== req.user.id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      let serverUrl = server.url;
+      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+        serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+      }
+
+      const caldav = new CalDAVClient(serverUrl, {
+        type: server.authType,
+        username: server.username,
+        password: server.password,
+        token: server.token
+      });
+
+      const discoveredCalendars = await caldav.discoverCalendars();
+
+      // Save discovered calendars to database
+      const saved = [];
+      let discovered = 0;
+
+      for (const cal of discoveredCalendars) {
+        discovered++;
+        const existingCal = await storage.findCalendarByUrl(cal.url);
+
+        if (!existingCal) {
+          const newCal = await storage.createCalendar({
+            userId: req.user.id,
+            serverId: server.id,
+            name: cal.displayName,
+            color: cal.color || '#3B82F6',
+            url: cal.url
+          });
+          saved.push(newCal);
+        }
+      }
+
+      res.json({ discovered, saved: saved.length });
+    } catch (error) {
+      console.error("Error discovering calendars:", error);
+      res.status(500).json({ message: `Failed to discover calendars: ${error.message}` });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

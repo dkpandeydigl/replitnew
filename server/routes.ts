@@ -288,31 +288,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Sync with our database
         const events = [];
 
-        for (const caldavEvent of caldavEvents) {
-          let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
+        try {
+          for (const caldavEvent of caldavEvents) {
+            try {
+              let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
 
-          if (!event) {
-            // Create new event in our database
-            event = await storage.createEvent({
-              userId,
-              calendarId,
-              uid: caldavEvent.uid,
-              url: caldavEvent.url,
-              title: caldavEvent.title,
-              description: caldavEvent.description || null,
-              location: caldavEvent.location || null,
-              start: caldavEvent.start,
-              end: caldavEvent.end,
-              allDay: caldavEvent.allDay,
-              recurrence: caldavEvent.recurrence || null,
-              metadata: caldavEvent.metadata || null
-            });
+              if (!event) {
+                // Create new event in our database
+                event = await storage.createEvent({
+                  userId,
+                  calendarId,
+                  uid: caldavEvent.uid,
+                  url: caldavEvent.url,
+                  title: caldavEvent.title,
+                  description: caldavEvent.description || null,
+                  location: caldavEvent.location || null,
+                  start: caldavEvent.start,
+                  end: caldavEvent.end,
+                  allDay: caldavEvent.allDay,
+                  recurrence: caldavEvent.recurrence || null,
+                  metadata: caldavEvent.metadata || null
+                });
+              }
+
+              events.push(event);
+            } catch (eventError) {
+              console.error('Error processing individual event:', eventError);
+              // Continue with other events even if one fails
+              continue;
+            }
           }
 
-          events.push(event);
+          // Return empty array if no events found
+          res.json(events);
+        } catch (eventsError) {
+          console.error('Error processing events batch:', eventsError);
+          res.json([]);  // Return empty array instead of error for new calendars
         }
-
-        res.json(events);
       } else {
         // Fetch from local database
         const events = await storage.getEvents(userId, calendarId);

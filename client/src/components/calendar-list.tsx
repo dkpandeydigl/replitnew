@@ -334,9 +334,9 @@ export default function CalendarList() {
                 </Button>
                 <Button 
                   type="submit"
-                  disabled={updateCalendarMutation.isPending}
+                  disabled={updateCalendarMutation.isLoading}
                 >
-                  {updateCalendarMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateCalendarMutation.isLoading ? "Saving..." : "Save Changes"}
                 </Button>
               </DialogFooter>
             </form>

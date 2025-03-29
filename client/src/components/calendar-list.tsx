@@ -154,8 +154,7 @@ export default function CalendarList() {
       await createCalendarMutation.mutateAsync({
         name: data.name,
         color: data.color,
-        serverId: servers[0].id,
-        url: servers[0].url
+        serverId: servers[0].id
       });
 
       setIsCreateDialogOpen(false);
@@ -165,11 +164,12 @@ export default function CalendarList() {
         title: "Success",
         description: "Calendar created successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create calendar:', error);
+      const errorMessage = error.response?.data?.message || "Failed to create calendar. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to create calendar. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     }

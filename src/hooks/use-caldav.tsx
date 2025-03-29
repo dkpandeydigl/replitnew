@@ -1,6 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { Server, Calendar } from '@/lib/types';
 
 interface CalDAVContextType {
@@ -10,7 +9,7 @@ interface CalDAVContextType {
   refreshServers: () => Promise<void>;
   connectServerMutation: {
     isPending: boolean;
-    mutate: (data: any) => void;
+    mutate: (data: any) => Promise<void>;
   };
   serversLoading: boolean;
 }
@@ -22,12 +21,9 @@ const CalDAVContext = createContext<CalDAVContextType>({
   refreshServers: async () => {},
   connectServerMutation: {
     isPending: false,
-    mutate: () => {},
-    isLoading: false,
-    isError: false,
-    error: null,
+    mutate: async () => {},
   },
-  serversLoading: false
+  serversLoading: false,
 });
 
 export function useCalDAV() {
@@ -42,28 +38,24 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   const [servers, setServers] = useState<Server[]>([]);
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [serversLoading, setServersLoading] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
-  const connectServerMutation = useMutation({
-    mutationFn: async (serverData: any) => {
-      const response = await fetch('/api/servers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(serverData),
-      });
-      if (!response.ok) throw new Error('Failed to connect to server');
-      return response.json();
-    },
-    onSuccess: () => {
-      refreshServers();
-    },
-  });
-
-  const refreshServers = async () => {
-    setServersLoading(true);
+  const refreshCalendars = useCallback(async () => {
     try {
+      const response = await fetch('/api/calendars');
+      if (!response.ok) throw new Error('Failed to fetch calendars');
+      const data = await response.json();
+      setCalendars(data);
+    } catch (error) {
+      console.error('Error refreshing calendars:', error);
+    }
+  }, []);
+
+  const refreshServers = useCallback(async () => {
+    try {
+      setServersLoading(true);
       const response = await fetch('/api/servers');
+      if (!response.ok) throw new Error('Failed to fetch servers');
       const data = await response.json();
       setServers(data);
     } catch (error) {
@@ -71,27 +63,42 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setServersLoading(false);
     }
-  };
+  }, []);
 
-  const refreshCalendars = async () => {
+  const mutate = async (data: any) => {
     try {
-      const response = await fetch('/api/calendars');
-      const data = await response.json();
-      setCalendars(data);
+      setIsPending(true);
+      const response = await fetch('/api/servers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to connect to server');
+      await refreshServers();
     } catch (error) {
-      console.error('Error refreshing calendars:', error);
+      console.error('Error connecting to server:', error);
+      throw error;
+    } finally {
+      setIsPending(false);
     }
   };
 
+  const value = {
+    servers,
+    calendars,
+    refreshCalendars,
+    refreshServers,
+    connectServerMutation: {
+      isPending,
+      mutate,
+    },
+    serversLoading,
+  };
+
   return (
-    <CalDAVContext.Provider value={{
-      servers,
-      calendars,
-      refreshCalendars,
-      refreshServers,
-      connectServerMutation,
-      serversLoading
-    }}>
+    <CalDAVContext.Provider value={value}>
       {children}
     </CalDAVContext.Provider>
   );

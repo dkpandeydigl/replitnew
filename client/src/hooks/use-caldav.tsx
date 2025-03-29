@@ -11,6 +11,7 @@ interface CalDAVContextType {
   selectedServer: Server | null;
   setSelectedServer: (server: Server | null) => void;
   connectServerMutation: any;
+  discoverCalendarsMutation: any;
   createServerMutation: any;
   deleteServerMutation: any;
   updateCalendarMutation: any;
@@ -54,6 +55,19 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
   });
 
   // Create server mutation
+  const discoverCalendarsMutation = useMutation({
+    mutationFn: async (serverId: string) => {
+      const response = await fetch(`/api/servers/${serverId}/discover`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('Failed to discover calendars');
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchCalendars();
+    }
+  });
+
   const connectServerMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await fetch('/api/servers/connect', {
@@ -134,6 +148,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     selectedServer,
     setSelectedServer,
     connectServerMutation,
+    discoverCalendarsMutation,
     createServerMutation,
     deleteServerMutation,
     updateCalendarMutation,

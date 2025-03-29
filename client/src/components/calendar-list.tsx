@@ -146,18 +146,24 @@ export default function CalendarList() {
       if (!servers || servers.length === 0) {
         throw new Error("No servers available");
       }
-      await createCalendarMutation.mutateAsync({
+      
+      const response = await createCalendarMutation.mutateAsync({
         name: data.name,
         color: data.color,
-        serverId: servers[0].id
+        serverId: servers[0].id,
+        url: servers[0].url
       });
-      setIsCreateDialogOpen(false);
-      createForm.reset();
-    } catch (error) {
+
+      if (response) {
+        setIsCreateDialogOpen(false);
+        createForm.reset();
+      }
+    } catch (error: any) {
       console.error('Failed to create calendar:', error);
+      const errorMessage = error.response?.data?.message || "Failed to create calendar. Please try again.";
       toast({
         title: "Error",
-        description: "Failed to create calendar. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }

@@ -309,41 +309,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const errors = [];
 
         for (const caldavEvent of caldavEvents) {
-            try {
-              let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
+          try {
+            let event = await storage.getEventByUID(caldavEvent.uid, calendarId);
 
-              if (!event) {
-                // Create new event in our database
-                event = await storage.createEvent({
-                  userId,
-                  calendarId,
-                  uid: caldavEvent.uid,
-                  url: caldavEvent.url,
-                  title: caldavEvent.title,
-                  description: caldavEvent.description || null,
-                  location: caldavEvent.location || null,
-                  start: caldavEvent.start,
-                  end: caldavEvent.end,
-                  allDay: caldavEvent.allDay,
-                  recurrence: caldavEvent.recurrence || null,
-                  metadata: caldavEvent.metadata || null
-                });
-              }
-
-              events.push(event);
-            } catch (eventError) {
-              console.error('Error processing individual event:', eventError);
-              // Continue with other events even if one fails
-              continue;
+            if (!event) {
+              // Create new event in our database
+              event = await storage.createEvent({
+                userId,
+                calendarId,
+                uid: caldavEvent.uid,
+                url: caldavEvent.url,
+                title: caldavEvent.title,
+                description: caldavEvent.description || null,
+                location: caldavEvent.location || null,
+                start: caldavEvent.start,
+                end: caldavEvent.end,
+                allDay: caldavEvent.allDay,
+                recurrence: caldavEvent.recurrence || null,
+                metadata: caldavEvent.metadata || null
+              });
             }
-          }
 
-          // Return empty array if no events found
-          res.json(events);
-        } catch (error) {
-          console.error('Error processing events:', error);
-          res.status(500).json({ message: `Failed to fetch events: ${error.message}` });
+            events.push(event);
+          } catch (error) {
+            console.error('Error processing individual event:', error);
+            // Continue with other events even if one fails
+            continue;
+          }
         }
+
+        // Return empty array if no events found
+        res.json(events);
       } else {
         // Fetch from local database
         const events = await storage.getEvents(userId, calendarId);
@@ -610,7 +606,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       for (const cal of discoveredCalendars) {
         discovered++;
-        const existingCal = await storage.getCalendars(req.user.id).then(cals => 
+        const existingCal = await storage.getCalendars(req.user.id).then(cals =>
           cals.find(c => c.url === cal.url)
         );
 

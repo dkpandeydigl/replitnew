@@ -8,7 +8,10 @@ interface CalDAVContextType {
   calendars: Calendar[];
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
-  connectServerMutation: any;
+  connectServerMutation: {
+    isPending: boolean;
+    mutate: (data: any) => void;
+  };
   serversLoading: boolean;
 }
 
@@ -19,7 +22,7 @@ const CalDAVContext = createContext<CalDAVContextType>({
   refreshServers: async () => {},
   connectServerMutation: {
     isPending: false,
-    mutate: async () => {}
+    mutate: () => {},
   },
   serversLoading: false
 });
@@ -41,12 +44,17 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     mutationFn: async (serverData: any) => {
       const response = await fetch('/api/servers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(serverData),
       });
       if (!response.ok) throw new Error('Failed to connect to server');
       return response.json();
-    }
+    },
+    onSuccess: () => {
+      refreshServers();
+    },
   });
 
   const refreshServers = async () => {
@@ -55,22 +63,28 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/servers');
       const data = await response.json();
       setServers(data);
+    } catch (error) {
+      console.error('Error refreshing servers:', error);
     } finally {
       setServersLoading(false);
     }
   };
 
   const refreshCalendars = async () => {
-    const response = await fetch('/api/calendars');
-    const data = await response.json();
-    setCalendars(data);
+    try {
+      const response = await fetch('/api/calendars');
+      const data = await response.json();
+      setCalendars(data);
+    } catch (error) {
+      console.error('Error refreshing calendars:', error);
+    }
   };
 
   return (
-    <CalDAVContext.Provider value={{ 
-      servers, 
-      calendars, 
-      refreshCalendars, 
+    <CalDAVContext.Provider value={{
+      servers,
+      calendars,
+      refreshCalendars,
       refreshServers,
       connectServerMutation,
       serversLoading

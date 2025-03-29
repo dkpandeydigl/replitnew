@@ -472,17 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Server not found" });
       }
       
-      // Initialize CalDAV client
-      let serverUrl = server.url;
-      
-      // For the DAViCal server, make sure we're pointing to the correct root location
-      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
-        // Adjust the URL to point to the user's principal collection
-        const principalUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
-        console.log(`Using DAViCal adjusted URL for event update: ${principalUrl}`);
-        serverUrl = principalUrl;
-      }
-      
+      // Initialize CalDAV client with base URL from server config
       const auth = {
         type: server.authType as 'username' | 'token',
         username: server.username,
@@ -490,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token: server.token
       };
       
-      const caldav = new CalDAVClient(serverUrl, auth);
+      const caldav = new CalDAVClient(server.url, auth);
       
       // Update event on CalDAV server
       const startDate = new Date(validatedData.start);

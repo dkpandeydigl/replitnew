@@ -499,19 +499,8 @@ class CalDAVClient {
   // Delete an event
   async deleteEvent(url: string): Promise<boolean> {
     try {
-      // Handle DAViCal specific URL construction
-      let fullUrl = url;
-      if (this.baseUrl.includes('davical')) {
-        if (!url.startsWith('http')) {
-          // Extract the calendar path from the URL
-          const calPath = url.split('/calendar/')[1];
-          fullUrl = `${this.baseUrl}calendar/${calPath}`;
-        }
-      } else {
-        fullUrl = url.startsWith('http') ? url : (
-          url.startsWith('/') ? url : `/${url}`
-        );
-      }
+      // Normalize URLs for consistency
+      const fullUrl = url.startsWith('http') ? url : new URL(url, this.baseUrl).href;
 
       log(`Deleting event at URL: ${fullUrl}`, 'caldav');
 

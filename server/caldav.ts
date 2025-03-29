@@ -468,10 +468,13 @@ class CalDAVClient {
       log(`Updating event: ${event.uid} at URL: ${event.url}`, 'caldav');
 
       const icsData = this.generateICS(event, event.uid);
+      
+      // Ensure we have the full URL
+      const eventUrl = event.url.startsWith('http') ? event.url : new URL(event.url, this.baseUrl).href;
 
       try {
         // First attempt standard PUT
-        await this.client.put(event.url, icsData, {
+        await this.client.put(eventUrl, icsData, {
           headers: {
             'Content-Type': 'text/calendar; charset=utf-8'
           }
@@ -481,7 +484,7 @@ class CalDAVClient {
 
         // Try another approach for DAViCal
         log('Trying PUT update with If-Match: * for DAViCal', 'caldav');
-        await this.client.put(event.url, icsData, {
+        await this.client.put(eventUrl, icsData, {
           headers: {
             'Content-Type': 'text/calendar; charset=utf-8',
             'If-Match': '*'

@@ -10,7 +10,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "npm run dev"]
 
 [workflows]
-runButton = "Dev Start"
+runButton = "Dev Server Clean"
 
 [[workflows.workflow]]
 name = "Project"
@@ -181,6 +181,44 @@ args = "npm install --no-audit --prefer-offline"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "NODE_ENV=development VITE_CJS_TRACE=true npm run dev"
+
+[[workflows.workflow]]
+name = "Stable Dev"
+author = 40353357
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "rm -rf node_modules"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install --no-audit --prefer-offline"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=development npm run dev -- --host 0.0.0.0 --port 5000"
+
+[[workflows.workflow]]
+name = "Dev Server Clean"
+author = 40353357
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "rm -rf node_modules"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm cache clean --force"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install --no-audit"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=development npm run dev -- --host 0.0.0.0 --port 5000"
 
 [[ports]]
 localPort = 5000

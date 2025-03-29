@@ -36,6 +36,7 @@ const createCalendarSchema = z.object({
 });
 
 async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
+  const { toast } = useToast(); // Added toast hook here
   try {
     if (!servers || servers.length === 0) {
       throw new Error("No servers available");
@@ -59,6 +60,7 @@ async function onCreateSubmit(data: z.infer<typeof createCalendarSchema>) {
 
 
 export default function CalendarList() {
+  const { toast } = useToast();
   const { 
     calendars, 
     calendarsLoading, 
@@ -75,7 +77,7 @@ export default function CalendarList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedCalendar, setSelectedCalendar] = useState<Calendar | null>(null);
-  const { toast } = useToast();
+
 
   const form = useForm<z.infer<typeof calendarFormSchema>>({
     resolver: zodResolver(calendarFormSchema),
@@ -372,7 +374,7 @@ export default function CalendarList() {
                   </FormItem>
                 )}
               />
-              
+
 
               <DialogFooter>
                 <Button 

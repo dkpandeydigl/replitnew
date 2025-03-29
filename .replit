@@ -10,7 +10,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "npm run dev"]
 
 [workflows]
-runButton = "Fresh Dev"
+runButton = "Dev Start"
 
 [[workflows.workflow]]
 name = "Project"
@@ -152,6 +152,27 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "rm -rf node_modules"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install --no-audit --prefer-offline"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "NODE_ENV=development VITE_CJS_TRACE=true npm run dev"
+
+[[workflows.workflow]]
+name = "Dev Start"
+author = 40353357
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "rm -rf node_modules"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm cache clean --force"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"

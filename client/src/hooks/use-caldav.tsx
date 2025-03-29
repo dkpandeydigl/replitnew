@@ -11,6 +11,7 @@ interface CalDAVContextType {
   connectServerMutation: any;
   discoverCalendarsMutation: any;
   updateCalendarMutation: any;
+  createCalendarMutation: any;
   refreshCalendars: () => Promise<void>;
   refreshServers: () => Promise<void>;
 }
@@ -72,6 +73,16 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
+  const createCalendarMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await axios.post('/api/calendars', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      refreshCalendars();
+    }
+  });
+
   const value = {
     servers,
     calendars,
@@ -79,6 +90,7 @@ export function CalDAVProvider({ children }: { children: React.ReactNode }) {
     connectServerMutation,
     discoverCalendarsMutation,
     updateCalendarMutation,
+    createCalendarMutation,
     refreshCalendars,
     refreshServers
   };

@@ -198,7 +198,7 @@ export default function CalendarList() {
         </div>
 
         {/* Loading state */}
-        {(calendarsLoading || discoverCalendarsMutation.isPending) && (
+        {(calendarsLoading || discoverCalendarsMutation.isLoading) && (
           <div className="space-y-2">
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
@@ -224,7 +224,7 @@ export default function CalendarList() {
         )}
 
         {/* Calendars list */}
-        {!calendarsLoading && !discoverCalendarsMutation.isPending && calendars && calendars.length === 0 && (
+        {!calendarsLoading && !discoverCalendarsMutation.isLoading && calendars && calendars.length === 0 && (
           <div className="text-center py-4 text-gray-500">
             <p className="text-sm">No calendars found</p>
             <Button 

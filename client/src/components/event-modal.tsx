@@ -11,7 +11,8 @@ import { useCalDAV } from "@/hooks/use-caldav";
 import { useToast } from "@/hooks/use-toast";
 import { EventFormData, eventFormSchema } from "@shared/schema";
 import type { Event, Calendar } from "@shared/schema";
-import { addHours, format, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { addHours } from "date-fns";
+import { format, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
 import { timezones } from "@/lib/timezones";
 
 interface EventModalProps {

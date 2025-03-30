@@ -135,12 +135,21 @@ export function setupAuth(app: Express) {
 
       // Try to create user on CalDAV server first
       try {
-        // Construct the DAViCal server URL
+        // First verify if user exists on CalDAV server
         const baseUrl = 'https://zpush.ajaydata.com/davical';
-        const principalUrl = `${baseUrl}/caldav.php/${username}/`;
-        console.log('Attempting to create CalDAV account with URL:', principalUrl);
+        // Use admin URL first to check/create user
+        const adminUrl = `${baseUrl}/caldav.php/`;
+        console.log('Verifying CalDAV account with URL:', adminUrl);
         
-        const caldav = new CalDAVClient(principalUrl, {
+        const caldav = new CalDAVClient(adminUrl, {
+          type: 'username',
+          username: 'admin',  // Use admin credentials first
+          password: process.env.DAVICAL_ADMIN_PASSWORD || 'admin'
+        });
+
+        // After admin verification, try user connection
+        const principalUrl = `${baseUrl}/caldav.php/${username}/`;
+        const userCaldav = new CalDAVClient(principalUrl, {
           type: 'username',
           username: username,
           password: password

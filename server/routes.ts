@@ -217,6 +217,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      // Get server details for CalDAV
+      const server = await storage.getCaldavServer(calendar.serverId);
+      if (!server) {
+        return res.status(404).json({ message: "Server not found" });
+      }
+
+      // Initialize CalDAV client
+      let serverUrl = server.url;
+      if (serverUrl.includes('zpush.ajaydata.com/davical') && server.username) {
+        serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${server.username}/`;
+      }
+
+      const auth = {
+        type: server.authType as 'username' | 'token',
+        username: server.username,
+        password: server.password,
+        token: server.token
+      };
+
+      const caldav = new CalDAVClient(serverUrl, auth);
+
+      // Update calendar on CalDAV server first
+      if (req.body.name || req.body.color) {
+        await caldav.createCalendar(calendar.url, req.body.name || calendar.name, req.body.color || calendar.color);
+      }
+
       const updates = {
         name: req.body.name,
         color: req.body.color

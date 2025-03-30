@@ -131,7 +131,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           location: data.location || null,
           start: new Date(data.start).toISOString(),
           end: new Date(data.end).toISOString(),
-          allDay: data.allDay || false
+          allDay: data.allDay || false,
+          timezone: data.timezone || "UTC"
         });
         toast({
           title: "Success",

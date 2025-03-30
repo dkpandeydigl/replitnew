@@ -11,8 +11,8 @@ import { useCalDAV } from "@/hooks/use-caldav";
 import { useToast } from "@/hooks/use-toast";
 import { EventFormData, eventFormSchema } from "@shared/schema";
 import type { Event, Calendar } from "@shared/schema";
-import { addHours } from "date-fns";
-import { format, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { addHours, format } from "date-fns";
+import { formatInTimeZone, toDate } from "date-fns-tz";
 import { timezones } from "@/lib/timezones";
 
 interface EventModalProps {
@@ -248,15 +248,15 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                         const endDate = form.getValues("end");
                         
                         if (startDate && endDate) {
-                          const startInNewTz = format(
-                            utcToZonedTime(new Date(startDate), newTz),
-                            "yyyy-MM-dd'T'HH:mm",
-                            { timeZone: newTz }
+                          const startInNewTz = formatInTimeZone(
+                            new Date(startDate),
+                            newTz,
+                            "yyyy-MM-dd'T'HH:mm"
                           );
-                          const endInNewTz = format(
-                            utcToZonedTime(new Date(endDate), newTz),
-                            "yyyy-MM-dd'T'HH:mm",
-                            { timeZone: newTz }
+                          const endInNewTz = formatInTimeZone(
+                            new Date(endDate),
+                            newTz,
+                            "yyyy-MM-dd'T'HH:mm"
                           );
                           
                           form.setValue("start", startInNewTz);

@@ -10,7 +10,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "npm run dev"]
 
 [workflows]
-runButton = "Start App"
+runButton = "Restart App"
 
 [[workflows.workflow]]
 name = "Project"

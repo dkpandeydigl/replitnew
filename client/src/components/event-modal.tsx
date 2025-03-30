@@ -39,6 +39,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || activeCalendar?.id || 1,
+      timezone: event?.metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      attendees: event?.metadata?.attendees || [],
     },
   });
 
@@ -190,6 +192,34 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                   <FormLabel>Location</FormLabel>
                   <FormControl>
                     <Input {...field} value={field.value || ""} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value || ""} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="attendees"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Attendees (comma-separated emails)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      {...field} 
+                      value={Array.isArray(field.value) ? field.value.join(", ") : ""} 
+                      onChange={(e) => field.onChange(e.target.value.split(",").map(email => email.trim()))}
+                    />
                   </FormControl>
                 </FormItem>
               )}

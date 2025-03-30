@@ -135,18 +135,38 @@ export function setupAuth(app: Express) {
 
       // Try to create user on CalDAV server first
       try {
-        const serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${username}/`;
-        const caldav = new CalDAVClient(serverUrl, {
+        // Construct the DAViCal server URL
+        const baseUrl = 'https://zpush.ajaydata.com/davical';
+        const principalUrl = `${baseUrl}/caldav.php/${username}/`;
+        console.log('Attempting to create CalDAV account with URL:', principalUrl);
+        
+        const caldav = new CalDAVClient(principalUrl, {
           type: 'username',
           username: username,
           password: password
         });
 
-        // Test connection to verify creation
-        const isValid = await caldav.testConnection();
+        // Test connection with retries
+        let isValid = false;
+        let attempts = 0;
+        const maxAttempts = 3;
+
+        while (!isValid && attempts < maxAttempts) {
+          try {
+            isValid = await caldav.testConnection();
+            if (!isValid) {
+              console.error(`CalDAV connection test failed, attempt ${attempts + 1} of ${maxAttempts}`);
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between attempts
+            }
+          } catch (connError) {
+            console.error(`Connection attempt ${attempts + 1} failed:`, connError);
+          }
+          attempts++;
+        }
+
         if (!isValid) {
-          console.error('CalDAV connection test failed during registration');
-          return res.status(400).json({ message: "Failed to create CalDAV account - connection test failed" });
+          console.error('All CalDAV connection attempts failed');
+          return res.status(400).json({ message: "Failed to create CalDAV account - could not establish connection" });
         }
 
         // Try to create a test calendar to verify write permissions

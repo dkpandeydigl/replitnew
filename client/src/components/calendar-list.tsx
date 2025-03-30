@@ -53,6 +53,16 @@ export default function CalendarList() {
     }
   });
 
+  // Reset form when selected calendar changes
+  useEffect(() => {
+    if (selectedCalendar) {
+      form.reset({
+        name: selectedCalendar.name,
+        color: selectedCalendar.color
+      });
+    }
+  }, [selectedCalendar, form]);
+
   const createForm = useForm<z.infer<typeof createCalendarSchema>>({
     resolver: zodResolver(createCalendarSchema),
     defaultValues: {
@@ -63,10 +73,6 @@ export default function CalendarList() {
 
   const handleEditCalendar = (calendar: Calendar) => {
     setSelectedCalendar(calendar);
-    form.reset({
-      name: calendar.name,
-      color: calendar.color
-    });
     setIsEditDialogOpen(true);
   };
 
@@ -222,7 +228,7 @@ export default function CalendarList() {
                     <FormItem>
                       <FormLabel>Color</FormLabel>
                       <FormControl>
-                        <Input type="color" {...field} />
+                        <Input {...field} type="color" className="h-10 w-full p-1 cursor-pointer" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -282,7 +288,7 @@ export default function CalendarList() {
                     <FormItem>
                       <FormLabel>Color</FormLabel>
                       <FormControl>
-                        <Input type="color" {...field} />
+                        <Input {...field} type="color" className="h-10 w-full p-1 cursor-pointer" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

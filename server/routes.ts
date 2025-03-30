@@ -491,7 +491,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location: validatedData.location,
         start: startDate,
         end: endDate,
-        allDay: validatedData.allDay
+        allDay: validatedData.allDay,
+        attendees: validatedData.attendees,
+        timezone: validatedData.timezone
       });
 
       // Save to local database

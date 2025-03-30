@@ -100,8 +100,8 @@ export const eventFormSchema = z.object({
   end: z.string().min(1, "End date is required"),
   allDay: z.boolean().default(false),
   calendarId: z.number().int().positive("Calendar selection is required"),
-  timezone: z.string().default("UTC"),
-  attendees: z.string().optional(),
+  timezone: z.string().min(1, "Timezone is required"),
+  attendees: z.array(z.string().email("Invalid email address")).optional(),
   resources: z.string().optional(),
   recurrence: z.object({
     frequency: z.enum(['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),

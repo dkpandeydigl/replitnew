@@ -695,6 +695,16 @@ SUMMARY:${event.title}`;
       icsData += `\nLOCATION:${event.location}`;
     }
 
+    if (event.attendees && Array.isArray(event.attendees)) {
+      event.attendees.forEach(attendee => {
+        icsData += `\nATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION:mailto:${attendee}`;
+      });
+    }
+
+    if (event.timezone) {
+      icsData += `\nTZID:${event.timezone}`;
+    }
+
     if (event.recurrence?.frequency) {
       let rrule = `FREQ=${event.recurrence.frequency}`;
 

@@ -119,20 +119,52 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const existingUser = await storage.getUserByUsername(req.body.username);
+      const username = req.body.username;
+      const password = req.body.password;
+
+      const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
-      });
+      // Try to create user on CalDAV server first
+      try {
+        const serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${username}/`;
+        const caldav = new CalDAVClient(serverUrl, {
+          type: 'username',
+          username: username,
+          password: password
+        });
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
-      });
+        // Test connection to verify creation
+        const isValid = await caldav.testConnection();
+        if (!isValid) {
+          return res.status(400).json({ message: "Failed to create CalDAV account" });
+        }
+
+        // Create local user
+        const user = await storage.createUser({
+          username,
+          password: await hashPassword(password),
+        });
+
+        // Create CalDAV server entry
+        await storage.createCaldavServer({
+          userId: user.id,
+          url: serverUrl,
+          authType: 'username',
+          username,
+          password,
+        });
+
+        req.login(user, (err) => {
+          if (err) return next(err);
+          res.status(201).json(user);
+        });
+      } catch (caldavError) {
+        console.error('Failed to create CalDAV account:', caldavError);
+        return res.status(400).json({ message: "Failed to create CalDAV account" });
+      }
     } catch (error) {
       next(error);
     }

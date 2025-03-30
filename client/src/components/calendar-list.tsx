@@ -209,6 +209,11 @@ export default function CalendarList() {
                   { id: selectedCalendar.id, ...data },
                   {
                     onSuccess: () => {
+                      setSelectedCalendar({
+                        ...selectedCalendar,
+                        name: data.name,
+                        color: data.color
+                      });
                       setIsEditDialogOpen(false);
                       toast({ title: 'Calendar updated successfully!' });
                     },

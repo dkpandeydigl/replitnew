@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCalDAV } from '@/hooks/use-caldav';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Plus, Pencil } from 'lucide-react';
+import { RefreshCw, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar } from '@shared/schema';
 import {
@@ -24,6 +24,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
+import {ConfirmationModal} from "@/components/ui/confirmation-modal";
+
 
 const calendarFormSchema = z.object({
   name: z.string().min(1, 'Calendar name is required'),
@@ -47,13 +49,15 @@ export default function CalendarList() {
     serversLoading,
     discoverCalendarsMutation,
     updateCalendarMutation,
-    createCalendarMutation
+    createCalendarMutation,
+    deleteCalendarMutation
   } = useCalDAV();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedCalendar, setSelectedCalendar] = useState<Calendar | null>(null);
-
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [calendarToDelete, setCalendarToDelete] = useState<Calendar | null>(null);
 
   const form = useForm<z.infer<typeof calendarFormSchema>>({
     resolver: zodResolver(calendarFormSchema),
@@ -178,6 +182,27 @@ export default function CalendarList() {
     }
   }
 
+  const handleDeleteCalendar = () => {
+    if (calendarToDelete) {
+      deleteCalendarMutation.mutate(calendarToDelete.id, {
+        onSuccess: () => {
+          setIsDeleteDialogOpen(false);
+          setCalendarToDelete(null);
+          toast({ title: 'Calendar deleted successfully!' });
+        },
+        onError: (error) => {
+          toast({ title: 'Error deleting calendar', description: error.message, variant: 'destructive' });
+        },
+      });
+    }
+  };
+
+  const handleOpenDeleteDialog = (calendar: Calendar) => {
+    setCalendarToDelete(calendar);
+    setIsDeleteDialogOpen(true);
+  };
+
+
   return (
     <>
       <div className="p-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 240px)' }}>
@@ -257,7 +282,7 @@ export default function CalendarList() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-primary"
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-primary mr-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditCalendar(calendar);
@@ -265,6 +290,18 @@ export default function CalendarList() {
                     title="Edit"
                   >
                     <Pencil size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenDeleteDialog(calendar);
+                    }}
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
                   </Button>
                 </div>
               </div>
@@ -410,6 +447,14 @@ export default function CalendarList() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationModal 
+        isOpen={isDeleteDialogOpen} 
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteCalendar}
+        title="Confirm Delete"
+        description={`Are you sure you want to delete the calendar "${calendarToDelete?.name}"? This action cannot be undone.`}
+      />
     </>
   );
 }

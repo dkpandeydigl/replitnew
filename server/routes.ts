@@ -263,14 +263,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await caldav.updateCalendar(calendar.url, req.body.name || calendar.name, req.body.color || calendar.color);
       }
 
-      const updates = {
-        name: req.body.name,
-        color: req.body.color
-      };
+      // Initialize CalDAV client
+      const caldav = new CalDAVClient(serverUrl, auth);
 
-      // Update in local storage
-      const updatedCalendar = await storage.updateCalendar(calendarId, updates);
-      res.json(updatedCalendar);
+      try {
+        // Update on CalDAV server first
+        await caldav.updateCalendar(
+          calendar.url,
+          req.body.name || calendar.name,
+          req.body.color || calendar.color
+        );
+
+        // Then update in local storage
+        const updates = {
+          name: req.body.name,
+          color: req.body.color
+        };
+        const updatedCalendar = await storage.updateCalendar(calendarId, updates);
+        res.json(updatedCalendar);
+      } catch (error) {
+        console.error('Failed to update calendar:', error);
+        res.status(500).json({ message: "Failed to update calendar on server" });
+      }
     } catch (error) {
       res.status(500).json({ message: "Failed to update calendar" });
     }

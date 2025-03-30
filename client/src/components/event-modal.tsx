@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalDAV } from "@/hooks/use-caldav";
 import { useToast } from "@/hooks/use-toast";
 import { EventFormData, eventFormSchema } from "@shared/schema";
 import type { Event, Calendar } from "@shared/schema";
-import { addHours } from "date-fns";
+import { addHours, format, utcToZonedTime, zonedTimeToUtc } from "date-fns-tz";
+import { timezones } from "@/lib/timezones";
 
 interface EventModalProps {
   isOpen: boolean;
@@ -226,6 +228,111 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone</FormLabel>
+                  <FormControl>
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      {...field}
+                      onChange={(e) => {
+                        const newTz = e.target.value;
+                        field.onChange(newTz);
+                        
+                        // Convert dates to new timezone
+                        const startDate = form.getValues("start");
+                        const endDate = form.getValues("end");
+                        
+                        if (startDate && endDate) {
+                          const startInNewTz = format(
+                            utcToZonedTime(new Date(startDate), newTz),
+                            "yyyy-MM-dd'T'HH:mm",
+                            { timeZone: newTz }
+                          );
+                          const endInNewTz = format(
+                            utcToZonedTime(new Date(endDate), newTz),
+                            "yyyy-MM-dd'T'HH:mm",
+                            { timeZone: newTz }
+                          );
+                          
+                          form.setValue("start", startInNewTz);
+                          form.setValue("end", endInNewTz);
+                        }
+                      }}
+                    >
+                      {timezones.map((tz) => (
+                        <option key={tz} value={tz}>
+                          {tz}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="attendees"
+              render={({ field }) => {
+                const [newAttendee, setNewAttendee] = useState("");
+                return (
+                  <FormItem>
+                    <FormLabel>Attendees</FormLabel>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter email address"
+                            value={newAttendee}
+                            onChange={(e) => setNewAttendee(e.target.value)}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (newAttendee && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newAttendee)) {
+                              const currentAttendees = field.value || [];
+                              if (!currentAttendees.includes(newAttendee)) {
+                                field.onChange([...currentAttendees, newAttendee]);
+                                setNewAttendee("");
+                              }
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <ScrollArea className="h-24 w-full rounded-md border">
+                        <div className="p-2">
+                          {field.value?.map((attendee: string, index: number) => (
+                            <div key={index} className="flex items-center justify-between py-1">
+                              <span>{attendee}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newAttendees = field.value.filter((_, i: number) => i !== index);
+                                  field.onChange(newAttendees);
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </FormItem>
+                );
+              }}
+            />
+
             <FormField
               control={form.control}
               name="calendarId"

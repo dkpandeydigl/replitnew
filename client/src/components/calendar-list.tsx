@@ -185,7 +185,11 @@ export default function CalendarList() {
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0"
-              onClick={() => discoverCalendarsMutation.mutate()}
+              onClick={() => {
+                if (servers && servers.length > 0) {
+                  discoverCalendarsMutation.mutate(servers[0].id);
+                }
+              }}
               disabled={!servers || servers.length === 0 || serversLoading || discoverCalendarsMutation.isPending}
             >
               <RefreshCw size={16} className={discoverCalendarsMutation.isPending ? 'animate-spin' : ''} />

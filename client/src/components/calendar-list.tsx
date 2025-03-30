@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { useMutation, useQueryClient } from '@tanstack/react-query'; // Added import
 
 const calendarFormSchema = z.object({
   name: z.string().min(1, 'Calendar name is required'),
@@ -22,6 +23,13 @@ const createCalendarSchema = z.object({
   name: z.string().min(1, 'Calendar name is required').regex(/^[a-zA-Z0-9._-]+$/, 'Allowed Characters - [Letters, digits, _, -, and .]'),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Must be a valid hex color')
 });
+
+// Added type definition
+type CalendarFormValues = {
+  name: string;
+  color: string;
+};
+
 
 export default function CalendarList() {
   const { toast } = useToast();
@@ -34,10 +42,11 @@ export default function CalendarList() {
     servers,
     serversLoading,
     discoverCalendarsMutation,
-    updateCalendarMutation,
     createCalendarMutation,
     deleteCalendarMutation
   } = useCalDAV();
+
+  const queryClient = useQueryClient(); // Added useQueryClient hook
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -45,7 +54,7 @@ export default function CalendarList() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [calendarToDelete, setCalendarToDelete] = useState<Calendar | null>(null);
 
-  const form = useForm<z.infer<typeof calendarFormSchema>>({
+  const form = useForm<CalendarFormValues>({ // Updated to use CalendarFormValues
     resolver: zodResolver(calendarFormSchema),
     defaultValues: {
       name: '',
@@ -100,11 +109,65 @@ export default function CalendarList() {
           setIsDeleteDialogOpen(false);
           setCalendarToDelete(null);
           toast({ title: 'Calendar deleted successfully!' });
+          queryClient.invalidateQueries({ queryKey: ['/api/calendars'] }); // Added invalidation
         },
         onError: (error) => {
           toast({ title: 'Error deleting calendar', description: error.message, variant: 'destructive' });
         },
       });
+    }
+  };
+
+  // Added placeholder for apiRequest function.  Needs to be defined elsewhere.
+  const apiRequest = async (method: string, url: string, data?: any) => {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: data ? JSON.stringify(data) : undefined
+    });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || response.statusText);
+    }
+    return response;
+  };
+
+  const updateCalendarMutation = useMutation({
+    mutationFn: async (data: { id: number; name: string; color: string }) => {
+      const res = await apiRequest('PATCH', `/api/calendars/${data.id}`, data);
+      const updatedCalendar = await res.json();
+      return updatedCalendar;
+    },
+    onSuccess: (updatedCalendar) => {
+      setSelectedCalendar(updatedCalendar);
+      setIsEditDialogOpen(false);
+      toast({ title: 'Calendar updated successfully!' });
+      queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
+    },
+    onError: (error) => {
+      toast({ title: 'Error updating calendar', description: error.message, variant: 'destructive' });
+    }
+  });
+
+
+  const onSubmit = async (data: CalendarFormValues) => {
+    if (selectedCalendar) {
+      try {
+        await updateCalendarMutation.mutateAsync({
+          id: selectedCalendar.id,
+          ...data,
+        });
+        // Refresh the calendar list after update
+        await queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
+      } catch (error) {
+        console.error('Failed to update calendar:', error);
+        toast({ 
+          title: 'Failed to update calendar',
+          variant: 'destructive'
+        });
+      }
     }
   };
 
@@ -203,27 +266,7 @@ export default function CalendarList() {
             <DialogTitle>Edit Calendar</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit((data) => {
-              if (selectedCalendar) {
-                updateCalendarMutation.mutate(
-                  { id: selectedCalendar.id, ...data },
-                  {
-                    onSuccess: () => {
-                      setSelectedCalendar({
-                        ...selectedCalendar,
-                        name: data.name,
-                        color: data.color
-                      });
-                      setIsEditDialogOpen(false);
-                      toast({ title: 'Calendar updated successfully!' });
-                    },
-                    onError: (error) => {
-                      toast({ title: 'Error updating calendar', description: error.message, variant: 'destructive' });
-                    },
-                  }
-                );
-              }
-            })}>
+            <form onSubmit={form.handleSubmit(onSubmit)}> {/* Updated onSubmit */}
               <div className="space-y-4 py-4">
                 <FormField
                   control={form.control}
@@ -276,6 +319,7 @@ export default function CalendarList() {
                     onSuccess: () => {
                       setIsCreateDialogOpen(false);
                       toast({ title: 'Calendar created successfully!' });
+                      queryClient.invalidateQueries({ queryKey: ['/api/calendars'] }); // Added invalidation
                     },
                     onError: (error) => {
                       toast({ title: 'Error creating calendar', description: error.message, variant: 'destructive' });

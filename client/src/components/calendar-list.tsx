@@ -73,6 +73,10 @@ export default function CalendarList() {
 
   const handleEditCalendar = (calendar: Calendar) => {
     setSelectedCalendar(calendar);
+    form.reset({
+      name: calendar.name,
+      color: calendar.color
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -185,7 +189,15 @@ export default function CalendarList() {
         )}
       </div>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog 
+  open={isEditDialogOpen} 
+  onOpenChange={(open) => {
+    if (!open) {
+      form.reset();
+    }
+    setIsEditDialogOpen(open);
+  }}
+>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Calendar</DialogTitle>

@@ -159,12 +159,25 @@ export default function CalendarList() {
   const onSubmit = async (data: CalendarFormValues) => {
     if (selectedCalendar) {
       try {
-        await updateCalendarMutation.mutateAsync({
-          id: selectedCalendar.id,
-          ...data,
-        });
-        // Refresh the calendar list after update
-        await queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
+        // Update calendar
+        const updatedCalendar = await updateCalendarMutation.mutateAsync(
+          { id: selectedCalendar.id, ...data },
+          {
+            onSuccess: () => {
+              setSelectedCalendar({
+                ...selectedCalendar,
+                name: data.name,
+                color: data.color
+              });
+              setIsEditDialogOpen(false);
+              queryClient.invalidateQueries({ queryKey: ['/api/calendars'] });
+              toast({ title: 'Calendar updated successfully!' });
+            },
+            onError: (error) => {
+              toast({ title: 'Error updating calendar', description: error.message, variant: 'destructive' });
+            }
+          }
+        );
       } catch (error) {
         console.error('Failed to update calendar:', error);
         toast({ 

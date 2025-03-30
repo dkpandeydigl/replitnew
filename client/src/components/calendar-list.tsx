@@ -89,8 +89,12 @@ export default function CalendarList() {
     setIsEditDialogOpen(true);
   };
 
+  // Added defaultServerId - needs to be defined appropriately based on application logic.
+  const defaultServerId = servers && servers.length > 0 ? servers[0].id : null;
+
   const handleCreateCalendar = () => {
     createForm.reset({
+      serverId: defaultServerId, // Added serverId to default values
       name: '',
       color: '#3B82F6'
     });

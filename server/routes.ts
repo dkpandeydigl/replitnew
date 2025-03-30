@@ -263,29 +263,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await caldav.updateCalendar(calendar.url, req.body.name || calendar.name, req.body.color || calendar.color);
       }
 
-      // Get calendar and server info first
-      const calendar = await storage.getCalendar(calendarId);
-      if (!calendar) {
-        return res.status(404).json({ message: "Calendar not found" });
-      }
-
-      const server = await storage.getCaldavServer(calendar.serverId);
-      if (!server) {
-        return res.status(404).json({ message: "Server not found" });
-      }
-
       const updates = {
         name: req.body.name,
         color: req.body.color
       };
-
-      // Initialize CalDAV client
-      const caldav = new CalDAVClient(server.url, {
-        type: server.authType as 'username' | 'token',
-        username: server.username,
-        password: server.password,
-        token: server.token
-      });
 
       // Update on CalDAV server first
       await caldav.updateCalendar(

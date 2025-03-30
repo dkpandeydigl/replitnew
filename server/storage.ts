@@ -9,21 +9,22 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Server operations
   getCaldavServers(userId: number): Promise<CaldavServer[]>;
   getCaldavServer(id: number): Promise<CaldavServer | undefined>;
   createCaldavServer(server: InsertCaldavServer): Promise<CaldavServer>;
   updateCaldavServer(id: number, server: Partial<InsertCaldavServer>): Promise<CaldavServer | undefined>;
   deleteCaldavServer(id: number): Promise<boolean>;
-  
+
   // Calendar operations
   getCalendars(userId: number): Promise<Calendar[]>;
   getCalendar(id: number): Promise<Calendar | undefined>;
   createCalendar(calendar: InsertCalendar): Promise<Calendar>;
   updateCalendar(id: number, calendar: Partial<InsertCalendar>): Promise<Calendar | undefined>;
   deleteCalendar(id: number): Promise<boolean>;
-  
+  deleteEventsForCalendar(calendarId: number): Promise<void>;
+
   // Event operations
   getEvents(userId: number, calendarId?: number): Promise<Event[]>;
   getEvent(id: number): Promise<Event | undefined>;
@@ -42,13 +43,13 @@ export class MemStorage implements IStorage {
   private caldavServers: Map<number, CaldavServer>;
   private calendars: Map<number, Calendar>;
   private events: Map<number, Event>;
-  
+
   // Counters for IDs
   private userIdCounter: number;
   private serverIdCounter: number;
   private calendarIdCounter: number;
   private eventIdCounter: number;
-  
+
   // Session store
   sessionStore: session.SessionStore;
 
@@ -57,7 +58,7 @@ export class MemStorage implements IStorage {
     this.caldavServers = new Map();
     this.calendars = new Map();
     this.events = new Map();
-    
+
     this.userIdCounter = 1;
     this.serverIdCounter = 1;
     this.calendarIdCounter = 1;
@@ -95,7 +96,7 @@ export class MemStorage implements IStorage {
   async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
     const existingUser = this.users.get(id);
     if (!existingUser) return undefined;
-    
+
     const updatedUser = { ...existingUser, ...updates };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -122,7 +123,7 @@ export class MemStorage implements IStorage {
   async updateCaldavServer(id: number, server: Partial<InsertCaldavServer>): Promise<CaldavServer | undefined> {
     const existingServer = this.caldavServers.get(id);
     if (!existingServer) return undefined;
-    
+
     const updatedServer = { ...existingServer, ...server };
     this.caldavServers.set(id, updatedServer);
     return updatedServer;
@@ -153,7 +154,7 @@ export class MemStorage implements IStorage {
   async updateCalendar(id: number, calendar: Partial<InsertCalendar>): Promise<Calendar | undefined> {
     const existingCalendar = this.calendars.get(id);
     if (!existingCalendar) return undefined;
-    
+
     const updatedCalendar = { ...existingCalendar, ...calendar };
     this.calendars.set(id, updatedCalendar);
     return updatedCalendar;
@@ -163,16 +164,25 @@ export class MemStorage implements IStorage {
     return this.calendars.delete(id);
   }
 
+  async deleteEventsForCalendar(calendarId: number): Promise<void> {
+    this.events.forEach((event, eventId) => {
+      if (event.calendarId === calendarId) {
+        this.events.delete(eventId);
+      }
+    });
+  }
+
+
   // Event methods
   async getEvents(userId: number, calendarId?: number): Promise<Event[]> {
     let events = Array.from(this.events.values()).filter(
       (event) => event.userId === userId
     );
-    
+
     if (calendarId) {
       events = events.filter(event => event.calendarId === calendarId);
     }
-    
+
     return events;
   }
 
@@ -196,7 +206,7 @@ export class MemStorage implements IStorage {
   async updateEvent(id: number, event: Partial<InsertEvent>): Promise<Event | undefined> {
     const existingEvent = this.events.get(id);
     if (!existingEvent) return undefined;
-    
+
     const updatedEvent = { ...existingEvent, ...event };
     this.events.set(id, updatedEvent);
     return updatedEvent;

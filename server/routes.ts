@@ -160,6 +160,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Name and server ID are required" });
       }
 
+      // Check if calendar with same name exists
+      const existingCalendars = await storage.getCalendars(req.user.id);
+      const calendarExists = existingCalendars.some(cal => cal.name.toLowerCase() === name.toLowerCase());
+      
+      if (calendarExists) {
+        return res.status(400).json({ message: "Calendar with this name already exists" });
+      }
+
       const server = await storage.getCaldavServer(serverId);
       if (!server) {
         return res.status(404).json({ message: "Server not found" });
@@ -208,6 +216,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const calendarId = parseInt(req.params.id);
       const calendar = await storage.getCalendar(calendarId);
+
+      if (req.body.name) {
+        // Check if another calendar with the new name exists
+        const existingCalendars = await storage.getCalendars(req.user.id);
+        const calendarExists = existingCalendars.some(cal => 
+          cal.name.toLowerCase() === req.body.name.toLowerCase() && cal.id !== calendarId
+        );
+        
+        if (calendarExists) {
+          return res.status(400).json({ message: "Calendar with this name already exists" });
+        }
+      }
 
       if (!calendar) {
         return res.status(404).json({ message: "Calendar not found" });
@@ -270,8 +290,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      // Get server details for CalDAV
+      const server = await storage.getCaldavServer(calendar.serverId);
+      if (!server) {
+        return res.status(404).json({ message: "Server not found" });
+      }
+
+      // Get count of events in this calendar
+      const events = await storage.getEvents(req.user.id, calendarId);
+
+      // Delete calendar from CalDAV server
+      const caldav = new CalDAVClient(server.url, {
+        type: server.authType as 'username' | 'token',
+        username: server.username,
+        password: server.password,
+        token: server.token
+      });
+
+      try {
+        // Delete calendar from CalDAV server
+        await caldav.delete(calendar.url);
+      } catch (error) {
+        console.error('Error deleting calendar from CalDAV server:', error);
+        // Continue with local deletion even if server deletion fails
+      }
+
+      // Delete all events and calendar from local storage
+      await storage.deleteEventsForCalendar(calendarId);
       await storage.deleteCalendar(calendarId);
-      res.status(200).json({ message: "Calendar deleted successfully" });
+
+      res.status(200).json({ 
+        message: "Calendar deleted successfully",
+        deletedEvents: events.length 
+      });
     } catch (error) {
       res.status(500).json({ message: "Failed to delete calendar" });
     }

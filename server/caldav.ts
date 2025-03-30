@@ -555,6 +555,18 @@ class CalDAVClient {
     });
   }
 
+  async delete(url: string): Promise<void> {
+    try {
+      await this.client.delete(url, {
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8'
+        }
+      });
+    } catch (error) {
+      throw new Error(`Failed to delete calendar: ${error}`);
+    }
+  }
+
   async updateCalendar(url: string, displayName: string, color: string): Promise<void> {
     await this.client.request({
       method: 'PROPPATCH',

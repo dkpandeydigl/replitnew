@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update calendar on CalDAV server first
       if (req.body.name || req.body.color) {
-        await caldav.createCalendar(calendar.url, req.body.name || calendar.name, req.body.color || calendar.color);
+        await caldav.updateCalendar(calendar.url, req.body.name || calendar.name, req.body.color || calendar.color);
       }
 
       const updates = {

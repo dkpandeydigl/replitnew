@@ -145,7 +145,20 @@ export function setupAuth(app: Express) {
         // Test connection to verify creation
         const isValid = await caldav.testConnection();
         if (!isValid) {
-          return res.status(400).json({ message: "Failed to create CalDAV account" });
+          console.error('CalDAV connection test failed during registration');
+          return res.status(400).json({ message: "Failed to create CalDAV account - connection test failed" });
+        }
+
+        // Try to create a test calendar to verify write permissions
+        try {
+          await caldav.createCalendar(
+            `${username}/test-calendar/`,
+            'Test Calendar',
+            '#3B82F6'
+          );
+        } catch (calendarError) {
+          console.error('Failed to create test calendar:', calendarError);
+          return res.status(400).json({ message: "Failed to create CalDAV account - insufficient permissions" });
         }
 
         // Create local user

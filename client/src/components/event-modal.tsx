@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { useToast } from './ui/use-toast';
+import { useToast } from '../hooks/use-toast';
 import { EventFormData, eventFormSchema } from '@shared/schema';
 import { useCalDAV } from '@/hooks/use-caldav';
 import { timezones } from '@/lib/timezones';

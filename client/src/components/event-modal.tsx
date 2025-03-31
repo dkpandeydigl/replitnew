@@ -39,10 +39,16 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || activeCalendar?.id || 1,
-      timezone: event?.metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: "UTC",
       attendees: event?.metadata?.attendees || [],
     },
   });
+
+  // Set default timezone value after form initialization
+  useEffect(() => {
+    const defaultTimezone = event?.metadata?.timezone || "UTC";
+    form.setValue("timezone", defaultTimezone);
+  }, [event, form]);
 
   useEffect(() => {
     const resetForm = () => {

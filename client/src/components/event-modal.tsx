@@ -148,6 +148,14 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       const startDate = new Date(formattedValues.start);
       const endDate = new Date(formattedValues.end);
 
+      // Ensure timezone is set
+      const timezone = formattedValues.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+      // Convert dates to UTC for server
+      const utcStartDate = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), startDate.getHours(), startDate.getMinutes()));
+      const utcEndDate = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), endDate.getHours(), endDate.getMinutes()));
+
+
       if (event?.id) {
         console.log('Updating event:', event);
         console.log('Form data:', formattedValues);
@@ -158,8 +166,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           calendarId: formattedValues.calendarId,
           description: formattedValues.description,
           location: formattedValues.location,
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
+          start: utcStartDate.toISOString(),
+          end: utcEndDate.toISOString(),
           allDay: formattedValues.allDay,
           metadata: formattedValues.metadata
         };
@@ -179,8 +187,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           calendarId: Number(formattedValues.calendarId) || activeCalendar?.id || 1,
           description: formattedValues.description || null,
           location: formattedValues.location || null,
-          start: startDate.toISOString(),
-          end: endDate.toISOString(),
+          start: utcStartDate.toISOString(),
+          end: utcEndDate.toISOString(),
           allDay: formattedValues.allDay || false,
           timezone: formattedValues.timezone || "UTC",
           metadata: {

@@ -1,32 +1,33 @@
-
-import { useState } from 'react';
-import { format } from 'date-fns';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Checkbox } from './ui/checkbox';
-import { useToast } from '../hooks/use-toast';
-import { EventFormData, eventFormSchema } from '@shared/schema';
-import { useCalDAV } from '@/hooks/use-caldav';
-import { timezones } from '@/lib/timezones';
+import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useCalDAV } from "@/hooks/use-caldav";
+import { useToast } from "@/hooks/use-toast";
+import { EventFormData, eventFormSchema } from "@shared/schema";
+import type { Event, Calendar } from "@shared/schema";
+import { addHours, format } from "date-fns";
+import { formatInTimeZone, toDate } from "date-fns-tz";
+import { timezones } from "@/lib/timezones";
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: any;
-  start?: Date;
-  end?: Date;
+  event?: Event;
 }
 
-export default function EventModal({ isOpen, onClose, event, start, end }: EventModalProps) {
-  const { activeCalendar, createEventMutation, updateEventMutation } = useCalDAV();
+export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
+  const { activeCalendar, calendars, createEventMutation, updateEventMutation, deleteEventMutation } = useCalDAV();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const prevEventRef = useRef<string | null>(null);
+
+  const now = new Date();
+  const oneHourLater = addHours(now, 1);
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -34,85 +35,131 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
       title: event?.title || "",
       description: event?.description || "",
       location: event?.location || "",
-      start: event?.start ? format(new Date(event.start), "yyyy-MM-dd'T'HH:mm") 
-        : start ? format(start, "yyyy-MM-dd'T'HH:mm") 
-        : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
-      end: event?.end ? format(new Date(event.end), "yyyy-MM-dd'T'HH:mm")
-        : end ? format(end, "yyyy-MM-dd'T'HH:mm")
-        : format(new Date(Date.now() + 3600000), "yyyy-MM-dd'T'HH:mm"),
+      start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
+      end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || activeCalendar?.id,
-      timezone: event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-      attendees: event?.attendees || [],
-      recurrence: event?.recurrence || {
-        frequency: 'NONE',
-        interval: 1,
-        byDay: []
-      }
-    }
+      calendarId: event?.calendarId || activeCalendar?.id || 1,
+      timezone: event?.metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      attendees: event?.metadata?.attendees || [],
+    },
   });
 
-  const onSubmit = async (data: EventFormData) => {
-    if (!activeCalendar) {
-      toast({
-        title: "Error",
-        description: "Please select a calendar first",
-        variant: "destructive",
+  useEffect(() => {
+    const resetForm = () => {
+      form.reset({
+        title: event?.title || "",
+        description: event?.description || "",
+        location: event?.location || "",
+        start: event ? new Date(event.start).toISOString().slice(0, 16) : now.toISOString().slice(0, 16),
+        end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
+        allDay: event?.allDay || false,
+        calendarId: event?.calendarId || activeCalendar?.id || 1,
       });
-      return;
-    }
+    };
 
+    if (isOpen) {
+      const currentEventString = JSON.stringify(event);
+      if (currentEventString !== prevEventRef.current) {
+        resetForm();
+        prevEventRef.current = currentEventString;
+      }
+    }
+  }, [isOpen, event, activeCalendar?.id, form]);
+
+  async function onSubmit(data: EventFormData) {
     try {
-      setIsSubmitting(true);
-      const formattedData = {
-        ...data,
-        calendarId: activeCalendar.id,
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString(),
-        attendees: data.attendees || [],
-        recurrence: {
-          frequency: data.recurrence?.frequency || 'NONE',
-          interval: data.recurrence?.interval || 1,
-          byDay: data.recurrence?.byDay || []
-        }
-      };
+      // Debug logging
+      console.log("Form data received:", data);
+      console.log("Event context:", event);
+      console.log("Active calendar:", activeCalendar);
+
+      if (!data.title || !data.start || !data.end || !data.calendarId) {
+        console.log("Missing required fields:", {
+          title: !data.title,
+          start: !data.start,
+          end: !data.end,
+          calendarId: !data.calendarId
+        });
+        toast({
+          title: "Error",
+          description: "Please fill in all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Ensure calendarId is properly set
+      const calendarId = event?.calendarId || activeCalendar?.id;
+      if (!calendarId) {
+        console.error("No calendar ID available");
+        toast({
+          title: "Error",
+          description: "No calendar selected",
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (event?.id) {
-        await updateEventMutation.mutateAsync({
+        console.log('Updating event:', event);
+        console.log('Form data:', data);
+
+        // Format data according to schema requirements
+        const updateData = {
           id: event.id,
-          ...formattedData,
-        });
+          title: data.title,
+          calendarId: Number(data.calendarId),
+          description: data.description || '',
+          location: data.location || '',
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString(),
+          allDay: data.allDay || false
+        };
+
+        console.log('Update data being sent:', updateData);
+
+        // Debug logging for update
+        console.log("Sending update data:", updateData);
+        await updateEventMutation.mutateAsync(updateData);
         toast({
           title: "Success",
           description: "Event updated successfully",
         });
       } else {
-        await createEventMutation.mutateAsync(formattedData);
+        await createEventMutation.mutateAsync({
+          title: data.title,
+          calendarId: Number(data.calendarId) || activeCalendar?.id || 1,
+          description: data.description || null,
+          location: data.location || null,
+          start: new Date(data.start).toISOString(),
+          end: new Date(data.end).toISOString(),
+          allDay: data.allDay || false,
+          timezone: data.timezone || "UTC"
+        });
         toast({
           title: "Success",
           description: "Event created successfully",
         });
       }
       onClose();
-    } catch (error: any) {
+    } catch (error) {
+      console.error("Failed to save event:", error);
       toast({
         title: "Error",
-        description: error.message || "An error occurred",
+        description: "Failed to save event",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[80vh] w-[90%] max-w-2xl overflow-y-auto my-8">
         <DialogHeader>
-          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
+          <DialogTitle>{event ? "Edit Event" : "Create Event"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1">
             <FormField
               control={form.control}
               name="title"
@@ -125,7 +172,6 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
@@ -133,12 +179,11 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} value={field.value || ''} />
+                    <Input {...field} value={field.value || ""} />
                   </FormControl>
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="location"
@@ -146,88 +191,35 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input {...field} value={field.value || ''} />
+                    <Input {...field} value={field.value || ""} />
                   </FormControl>
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="start"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="end"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
             <FormField
               control={form.control}
-              name="timezone"
+              name="start"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Timezone</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {timezones.map((timezone) => (
-                        <SelectItem key={timezone} value={timezone}>
-                          {timezone}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Start</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
-              name="recurrence.frequency"
+              name="end"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Recurrence</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select recurrence" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="NONE">None</SelectItem>
-                      <SelectItem value="DAILY">Daily</SelectItem>
-                      <SelectItem value="WEEKLY">Weekly</SelectItem>
-                      <SelectItem value="MONTHLY">Monthly</SelectItem>
-                      <SelectItem value="YEARLY">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>End</FormLabel>
+                  <FormControl>
+                    <Input type="datetime-local" {...field} />
+                  </FormControl>
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="allDay"
@@ -236,18 +228,174 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
                   <FormControl>
                     <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
-                  <FormLabel className="!mt-0">All Day Event</FormLabel>
+                  <FormLabel className="font-normal">All Day Event</FormLabel>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone</FormLabel>
+                  <FormControl>
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      {...field}
+                      onChange={(e) => {
+                        const newTz = e.target.value;
+                        field.onChange(newTz);
+
+                        // Convert dates to new timezone
+                        const startDate = form.getValues("start");
+                        const endDate = form.getValues("end");
+
+                        if (startDate && endDate) {
+                          const startInNewTz = formatInTimeZone(
+                            new Date(startDate),
+                            newTz,
+                            "yyyy-MM-dd'T'HH:mm"
+                          );
+                          const endInNewTz = formatInTimeZone(
+                            new Date(endDate),
+                            newTz,
+                            "yyyy-MM-dd'T'HH:mm"
+                          );
+
+                          form.setValue("start", startInNewTz);
+                          form.setValue("end", endInNewTz);
+                        }
+                      }}
+                    >
+                      {timezones.map((tz) => (
+                        <option key={tz} value={tz}>
+                          {tz}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
                 </FormItem>
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="attendees"
+              render={({ field }) => {
+                const [newAttendee, setNewAttendee] = useState("");
+                return (
+                  <FormItem>
+                    <FormLabel>Attendees</FormLabel>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input
+                            type="email"
+                            placeholder="Enter email address"
+                            value={newAttendee}
+                            onChange={(e) => setNewAttendee(e.target.value)}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            if (newAttendee && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newAttendee)) {
+                              const currentAttendees = field.value || [];
+                              if (!currentAttendees.includes(newAttendee)) {
+                                field.onChange([...currentAttendees, newAttendee]);
+                                setNewAttendee("");
+                              }
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <ScrollArea className="h-24 w-full rounded-md border">
+                        <div className="p-2">
+                          {field.value?.map((attendee: string, index: number) => (
+                            <div key={index} className="flex items-center justify-between py-1">
+                              <span>{attendee}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newAttendees = field.value.filter((_, i: number) => i !== index);
+                                  field.onChange(newAttendees);
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="calendarId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Calendar</FormLabel>
+                  <FormControl>
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      {...field}
+                      value={field.value?.toString() || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value ? parseInt(value, 10) : '');
+                      }}
+                    >
+                      <option value="">Select a calendar</option>
+                      {calendars?.map((cal) => (
+                        <option key={cal.id} value={cal.id.toString()}>
+                          {cal.name}
+                        </option>
+                      ))}
+                    </select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <div className="flex justify-end space-x-2">
-              <Button variant="outline" type="button" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : event?.id ? "Update" : "Create"}
-              </Button>
+              <div className="flex justify-between w-full">
+                {event?.id && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={async () => {
+                      try {
+                        await deleteEventMutation.mutateAsync(event.id);
+                        toast({
+                          title: "Success",
+                          description: "Event deleted successfully",
+                        });
+                        onClose();
+                      } catch (error) {
+                        console.error("Failed to delete event:", error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to delete event",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    Delete
+                  </Button>
+                )}
+                <div className="flex space-x-2">
+                  <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                  <Button type="submit">Save</Button>
+                </div>
+              </div>
             </div>
           </form>
         </Form>

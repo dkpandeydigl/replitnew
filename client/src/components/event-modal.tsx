@@ -53,18 +53,18 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: event || {
-      title: "",
-      description: "",
-      location: "",
-      start: format(addHours(now, 1), "yyyy-MM-dd'T'HH:mm"),
-      end: format(addHours(now, 2), "yyyy-MM-dd'T'HH:mm"),
-      allDay: false,
-      calendarId: activeCalendar?.id || undefined,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      attendees: [],
-      resources: "",
-      recurrence: {
+    defaultValues: {
+      title: event?.title || "",
+      description: event?.description || "",
+      location: event?.location || "",
+      start: event?.start ? format(new Date(event.start), "yyyy-MM-dd'T'HH:mm") : format(addHours(now, 1), "yyyy-MM-dd'T'HH:mm"),
+      end: event?.end ? format(new Date(event.end), "yyyy-MM-dd'T'HH:mm") : format(addHours(now, 2), "yyyy-MM-dd'T'HH:mm"),
+      allDay: event?.allDay || false,
+      calendarId: event?.calendarId || activeCalendar?.id || 0,
+      timezone: event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      attendees: event?.attendees || [],
+      resources: event?.resources || "",
+      recurrence: event?.recurrence || {
         frequency: 'NONE',
         interval: 1,
         byDay: []
@@ -74,26 +74,40 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   const onSubmit = async (data: EventFormData) => {
     try {
+      if (!data.calendarId && activeCalendar?.id) {
+        data.calendarId = activeCalendar.id;
+      }
+
+      if (!data.calendarId) {
+        toast({ title: "Error", description: "Please select a calendar", variant: "destructive" });
+        return;
+      }
+
       const formattedData = {
         ...data,
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString(),
-        attendees: data.attendees.map(attendee => ({
+        attendees: data.attendees?.map(attendee => ({
           email: attendee.email,
           role: attendee.role || "REQ-PARTICIPANT"
-        }))
+        })) || []
       };
 
       if (event?.id) {
-        await updateEvent({ ...event, ...formattedData });
-        toast({ title: "Event updated" });
+        await updateEvent(event.id, formattedData);
+        toast({ title: "Event updated successfully" });
       } else {
         await createEvent(formattedData);
-        toast({ title: "Event created" });
+        toast({ title: "Event created successfully" });
       }
       onClose();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save event. Please try again.", variant: "destructive" });
+      console.error('Error saving event:', error);
+      toast({ 
+        title: "Error", 
+        description: error instanceof Error ? error.message : "Failed to save event. Please try again.", 
+        variant: "destructive" 
+      });
     }
   };
 

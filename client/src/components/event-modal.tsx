@@ -71,7 +71,19 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     if (isOpen) {
       const currentEventString = JSON.stringify(event);
       if (currentEventString !== prevEventRef.current) {
-        resetForm();
+        const startDate = event?.start ? new Date(event.start) : now;
+        const endDate = event?.end ? new Date(event.end) : new Date(startDate.getTime() + 60 * 60 * 1000);
+        
+        form.reset({
+          title: event?.title || "",
+          description: event?.description || "",
+          location: event?.location || "",
+          start: startDate.toISOString().slice(0, 16),
+          end: endDate.toISOString().slice(0, 16),
+          allDay: event?.allDay || false,
+          calendarId: event?.calendarId || activeCalendar?.id || 1,
+          attendees: event?.metadata?.attendees || [],
+        });
         prevEventRef.current = currentEventString;
       }
     }

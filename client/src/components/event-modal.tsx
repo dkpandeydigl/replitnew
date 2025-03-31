@@ -33,7 +33,7 @@ interface EventModalProps {
   end?: Date;
 }
 
-export function EventModal({ isOpen, onClose, event, start, end }: EventModalProps) {
+export default function EventModal({ isOpen, onClose, event, start, end }: EventModalProps) {
   const { activeCalendar, createEventMutation, updateEventMutation } = useCalDAV();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);

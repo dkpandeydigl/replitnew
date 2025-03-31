@@ -101,10 +101,13 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       // Ensure attendees are properly formatted
       const formattedValues = {
         ...values,
-        attendees: values.attendees.map(att => ({
-          email: att.email,
-          role: att.role || 'MEMBER'
-        }))
+        metadata: {
+          attendees: values.attendees.map(att => ({
+            email: att.email,
+            role: att.role || 'MEMBER'
+          })),
+          timezone: values.timezone
+        }
       };
 
       // Debug logging
@@ -155,10 +158,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           start: startDate.toISOString(),
           end: endDate.toISOString(),
           allDay: formattedValues.allDay,
-          metadata: {
-            timezone: formattedValues.timezone,
-            attendees: formattedValues.attendees
-          }
+          metadata: formattedValues.metadata
         };
 
         console.log('Update data being sent:', eventData);

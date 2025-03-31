@@ -511,7 +511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         end: caldavEvent.end,
         allDay: caldavEvent.allDay,
         recurrence: null,
-        metadata: null,
+        metadata: { attendees: validatedData.attendees },
         timezone
       });
 
@@ -589,7 +589,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location: validatedData.location || null,
         start: startDate,
         end: endDate,
-        allDay: validatedData.allDay
+        allDay: validatedData.allDay,
+        metadata: { attendees: validatedData.attendees }
       });
 
       res.json(updatedEvent);

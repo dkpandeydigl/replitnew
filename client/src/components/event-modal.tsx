@@ -198,19 +198,6 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
             />
             <FormField
               control={form.control}
-              name="timezone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Timezone</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value || ""} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
               name="start"
               render={({ field }) => (
                 <FormItem>

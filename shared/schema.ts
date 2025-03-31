@@ -103,16 +103,20 @@ export const eventFormSchema = z.object({
   timezone: z.string().min(1, "Timezone is required"),
   attendees: z.array(z.object({
     email: z.string().email("Invalid email"),
-    role: z.enum(["CHAIR", "REQ-PARTICIPANT", "OPT-PARTICIPANT", "NON-PARTICIPANT"])
+    role: z.string()
   })).default([]),
   resources: z.string().optional(),
   recurrence: z.object({
     frequency: z.enum(['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
-    interval: z.number().positive().optional(),
-    count: z.number().positive().optional(),
+    interval: z.number().int().positive().default(1),
+    count: z.number().int().positive().optional(),
     until: z.string().optional(),
-    byDay: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).optional(),
-  }).optional(),
+    byDay: z.array(z.string()).default([])
+  }).default({
+    frequency: 'NONE',
+    interval: 1,
+    byDay: []
+  })
 });
 
 export type InsertEvent = z.infer<typeof insertEventSchema>;

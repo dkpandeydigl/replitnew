@@ -74,9 +74,44 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   const onSubmit = async (data: EventFormData) => {
     try {
+      console.log("Form data:", data);
+      
       if (!data.calendarId && activeCalendar?.id) {
         data.calendarId = activeCalendar.id;
       }
+
+      if (!data.calendarId) {
+        toast({
+          title: "Error",
+          description: "Please select a calendar",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const formattedData = {
+        ...data,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString(),
+        attendees: data.attendees?.map(attendee => ({
+          email: attendee.email,
+          role: attendee.role
+        })) || [],
+        recurrence: {
+          ...data.recurrence,
+          byDay: data.recurrence?.byDay || []
+        }
+      };
+
+      if (event?.id) {
+        await updateEvent(event.id, formattedData);
+        toast({ title: "Event updated successfully" });
+      } else {
+        await createEvent(formattedData);
+        toast({ title: "Event created successfully" });
+      }
+      
+      onClose();
 
       if (!data.calendarId) {
         toast({ title: "Error", description: "Please select a calendar", variant: "destructive" });

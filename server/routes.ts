@@ -519,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             email: att.email,
             role: att.role || 'MEMBER'
           })),
-          timezone
+          timezone: validatedData.timezone
         },
         timezone
       });

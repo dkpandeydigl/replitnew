@@ -312,14 +312,24 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                   ));
                 };
 
+                const [selectedRole, setSelectedRole] = useState<string>("MEMBER");
+
                 const handleSelectEmail = (email: string) => {
                   const currentAttendees = field.value || [];
-                  if (!currentAttendees.includes(email)) {
-                    field.onChange([...currentAttendees, email]);
+                  if (!currentAttendees.find(a => a.email === email)) {
+                    field.onChange([...currentAttendees, { email, role: selectedRole }]);
                   }
                   setNewAttendee("");
                   setSearchResults([]);
                   setIsSearching(false);
+                };
+
+                const handleRoleChange = (email: string, newRole: string) => {
+                  const currentAttendees = field.value || [];
+                  const updatedAttendees = currentAttendees.map(attendee => 
+                    attendee.email === email ? { ...attendee, role: newRole } : attendee
+                  );
+                  field.onChange(updatedAttendees);
                 };
 
                 return (
@@ -368,9 +378,31 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                       </div>
                       <ScrollArea className="h-24 w-full rounded-md border">
                         <div className="p-2">
-                          {field.value?.map((attendee: string, index: number) => (
+                          <div className="flex gap-2 mb-2">
+                            <select
+                              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                              value={selectedRole}
+                              onChange={(e) => setSelectedRole(e.target.value)}
+                            >
+                              <option value="MEMBER">Member</option>
+                              <option value="CHAIRMAN">Chairman</option>
+                              <option value="SECRETARY">Secretary</option>
+                            </select>
+                          </div>
+                          {field.value?.map((attendee: { email: string, role?: string }, index: number) => (
                             <div key={index} className="flex items-center justify-between py-1">
-                              <span>{attendee}</span>
+                              <div className="flex items-center gap-2">
+                                <span>{attendee.email}</span>
+                                <select
+                                  className="text-xs rounded-md border border-input bg-background px-2 py-1"
+                                  value={attendee.role || "MEMBER"}
+                                  onChange={(e) => handleRoleChange(attendee.email, e.target.value)}
+                                >
+                                  <option value="MEMBER">Member</option>
+                                  <option value="CHAIRMAN">Chairman</option>
+                                  <option value="SECRETARY">Secretary</option>
+                                </select>
+                              </div>
                               <Button
                                 type="button"
                                 variant="ghost"

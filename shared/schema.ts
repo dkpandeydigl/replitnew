@@ -101,7 +101,10 @@ export const eventFormSchema = z.object({
   allDay: z.boolean().default(false),
   calendarId: z.number().int().positive("Calendar selection is required"),
   timezone: z.string().optional(),
-  attendees: z.array(z.string().email("Invalid email")).default([]),
+  attendees: z.array(z.object({
+    email: z.string().email("Invalid email"),
+    role: z.enum(['CHAIRMAN', 'SECRETARY', 'MEMBER']).optional(),
+  })).default([]),
   resources: z.string().optional(),
   recurrence: z.object({
     frequency: z.enum(['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),

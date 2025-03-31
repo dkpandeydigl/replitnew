@@ -425,17 +425,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                               </Button>
                             </div>
                           ))}
-                          <div className="flex gap-2 mb-2 mt-2">
-                            <select
-                              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-                              value={selectedRole}
-                              onChange={(e) => setSelectedRole(e.target.value)}
-                            >
-                              <option value="MEMBER">Member</option>
-                              <option value="CHAIRMAN">Chairman</option>
-                              <option value="SECRETARY">Secretary</option>
-                            </select>
-                          </div>
+                          
                         </div>
                       </ScrollArea>
                     </div>

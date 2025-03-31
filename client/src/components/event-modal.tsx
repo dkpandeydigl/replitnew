@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -53,33 +52,41 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
   });
 
   const onSubmit = async (data: EventFormData) => {
-    if (!activeCalendar) {
-      toast({
-        title: "Error",
-        description: "Please select a calendar first",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setIsSubmitting(true);
-      if (event?.id) {
-        await updateEventMutation.mutateAsync({
-          id: event.id,
-          ...data,
-        });
-        toast({
-          title: "Success",
-          description: "Event updated successfully",
-        });
-      } else {
-        await createEventMutation.mutateAsync(data);
-        toast({
-          title: "Success",
-          description: "Event created successfully",
-        });
+
+      if (!data.calendarId) {
+        toast({ title: "Error", description: "Please select a calendar", variant: "destructive" });
+        return;
       }
+
+      const formattedData = {
+        ...data,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString(),
+        attendees: data.attendees?.map(attendee => ({
+          email: attendee.email,
+          role: attendee.role || "REQ-PARTICIPANT"
+        })) || [],
+        recurrence: {
+          ...data.recurrence,
+          frequency: data.recurrence?.frequency || 'NONE',
+          interval: data.recurrence?.interval || 1,
+          byDay: data.recurrence?.byDay || []
+        }
+      };
+
+      if (event?.id) {
+        await updateEventMutation.mutateAsync({ id: event.id, data: formattedData });
+      } else {
+        await createEventMutation.mutateAsync(formattedData);
+      }
+
+      toast({
+        title: "Success",
+        description: event?.id ? "Event updated successfully" : "Event created successfully",
+      });
+
       onClose();
     } catch (error: any) {
       toast({
@@ -206,6 +213,47 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
                 </FormItem>
               )}
             />
+
+            {/* Added Attendees Field */}
+            <FormField
+              control={form.control}
+              name="attendees"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Attendees</FormLabel>
+                  <FormControl>
+                    {/*  Implementation for attendees input field would go here.  This is a placeholder. */}
+                    <Input type="text" {...field} placeholder="Enter attendee emails (comma-separated)" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Added Recurrence Field */}
+            <FormField
+              control={form.control}
+              name="recurrence"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recurrence</FormLabel>
+                  <FormControl>
+                    {/* Implementation for recurrence options would go here. This is a placeholder. */}
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select recurrence" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={{ frequency: 'NONE', interval: 1, byDay: [] }}>None</SelectItem>
+                        <SelectItem value={{ frequency: 'DAILY', interval: 1, byDay: [] }}>Daily</SelectItem>
+                        <SelectItem value={{ frequency: 'WEEKLY', interval: 1, byDay: [] }}>Weekly</SelectItem>
+                        {/* Add more recurrence options as needed */}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
 
             <div className="flex justify-end space-x-2">
               <Button variant="outline" type="button" onClick={onClose}>

@@ -293,28 +293,73 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               name="attendees"
               render={({ field }) => {
                 const [newAttendee, setNewAttendee] = useState("");
+                const [searchResults, setSearchResults] = useState<string[]>([]);
+                const [isSearching, setIsSearching] = useState(false);
+
+                const handleSearch = (value: string) => {
+                  setNewAttendee(value);
+                  setIsSearching(true);
+                  
+                  // Mock search - replace this with actual addressbook search later
+                  const mockResults = value ? [
+                    value,
+                    `${value}.user@example.com`,
+                    `${value}.contact@example.com`
+                  ] : [];
+                  
+                  setSearchResults(mockResults.filter(email => 
+                    email.toLowerCase().includes(value.toLowerCase())
+                  ));
+                };
+
+                const handleSelectEmail = (email: string) => {
+                  const currentAttendees = field.value || [];
+                  if (!currentAttendees.includes(email)) {
+                    field.onChange([...currentAttendees, email]);
+                  }
+                  setNewAttendee("");
+                  setSearchResults([]);
+                  setIsSearching(false);
+                };
+
                 return (
                   <FormItem>
                     <FormLabel>Attendees</FormLabel>
                     <div className="space-y-2">
                       <div className="flex gap-2">
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="Enter email address"
-                            value={newAttendee}
-                            onChange={(e) => setNewAttendee(e.target.value)}
-                          />
-                        </FormControl>
+                        <div className="relative flex-1">
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="Search or enter email address"
+                              value={newAttendee}
+                              onChange={(e) => handleSearch(e.target.value)}
+                              onBlur={() => {
+                                // Delay hiding results to allow clicking
+                                setTimeout(() => setIsSearching(false), 200);
+                              }}
+                              onFocus={() => newAttendee && setIsSearching(true)}
+                            />
+                          </FormControl>
+                          {isSearching && searchResults.length > 0 && (
+                            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+                              {searchResults.map((email, index) => (
+                                <div
+                                  key={index}
+                                  className="px-3 py-2 cursor-pointer hover:bg-gray-100"
+                                  onClick={() => handleSelectEmail(email)}
+                                >
+                                  {email}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                         <Button
                           type="button"
                           onClick={() => {
                             if (newAttendee && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newAttendee)) {
-                              const currentAttendees = field.value || [];
-                              if (!currentAttendees.includes(newAttendee)) {
-                                field.onChange([...currentAttendees, newAttendee]);
-                                setNewAttendee("");
-                              }
+                              handleSelectEmail(newAttendee);
                             }
                           }}
                         >

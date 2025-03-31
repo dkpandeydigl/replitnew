@@ -593,7 +593,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         start: startDate,
         end: endDate,
         allDay: validatedData.allDay,
-        metadata: { attendees: validatedData.attendees }
+        metadata: { 
+          attendees: validatedData.attendees.map(att => ({
+            email: att.email,
+            role: att.role || 'MEMBER'
+          })),
+          timezone: validatedData.timezone
+        }
       });
 
       res.json(updatedEvent);

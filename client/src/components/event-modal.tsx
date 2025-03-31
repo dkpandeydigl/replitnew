@@ -73,7 +73,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       if (currentEventString !== prevEventRef.current) {
         const startDate = event?.start ? new Date(event.start) : now;
         const endDate = event?.end ? new Date(event.end) : new Date(startDate.getTime() + 60 * 60 * 1000);
-        
+
         form.reset({
           title: event?.title || "",
           description: event?.description || "",
@@ -82,7 +82,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
           end: endDate.toISOString().slice(0, 16),
           allDay: event?.allDay || false,
           calendarId: event?.calendarId || activeCalendar?.id || 1,
-          attendees: event?.metadata?.attendees || [],
+          attendees: (event?.metadata?.attendees || []).map(att => ({
+            email: att.email,
+            role: att.role || 'MEMBER'
+          })),
         });
         prevEventRef.current = currentEventString;
       }
@@ -425,7 +428,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                               </Button>
                             </div>
                           ))}
-                          
+
                         </div>
                       </ScrollArea>
                     </div>

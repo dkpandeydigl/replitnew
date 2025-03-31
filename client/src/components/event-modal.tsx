@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCalDAV } from "../hooks/use-caldav";
 import { useToast } from "../hooks/use-toast";
-import { EventFormData, eventFormSchema } from "../../shared/schema";
+import { eventFormSchema } from "@shared/schema";
 import {
   Dialog,
   DialogContent,

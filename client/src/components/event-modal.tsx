@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format, addHours } from "date-fns";
 import { useForm } from "react-hook-form";
@@ -224,9 +223,10 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                       </Button>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {form.watch('attendees')?.map((attendee, index) => (
-                        <Badge key={index} variant="secondary">
-                          {attendee}
+                      {form.watch('attendees')?.map((attendee: { email: string; role: string }, index) => (
+                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                          <span>{attendee.email}</span>
+                          <span className="text-xs">({attendee.role})</span>
                           <Button
                             type="button"
                             variant="ghost"

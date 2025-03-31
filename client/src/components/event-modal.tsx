@@ -98,17 +98,26 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   async function onSubmit(values: EventFormData) {
     try {
+      // Ensure attendees are properly formatted
+      const formattedValues = {
+        ...values,
+        attendees: values.attendees.map(att => ({
+          email: att.email,
+          role: att.role || 'MEMBER'
+        }))
+      };
+
       // Debug logging
-      console.log("Form data received:", values);
+      console.log("Form data received:", formattedValues);
       console.log("Event context:", event);
       console.log("Active calendar:", activeCalendar);
 
-      if (!values.title || !values.start || !values.end || !values.calendarId) {
+      if (!formattedValues.title || !formattedValues.start || !formattedValues.end || !formattedValues.calendarId) {
         console.log("Missing required fields:", {
-          title: !values.title,
-          start: !values.start,
-          end: !values.end,
-          calendarId: !values.calendarId
+          title: !formattedValues.title,
+          start: !formattedValues.start,
+          end: !formattedValues.end,
+          calendarId: !formattedValues.calendarId
         });
         toast({
           title: "Error",
@@ -130,25 +139,25 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         return;
       }
 
-      const startDate = new Date(values.start);
-      const endDate = new Date(values.end);
+      const startDate = new Date(formattedValues.start);
+      const endDate = new Date(formattedValues.end);
 
       if (event?.id) {
         console.log('Updating event:', event);
-        console.log('Form data:', values);
+        console.log('Form data:', formattedValues);
 
         const eventData = {
           id: event.id,
-          title: values.title,
-          calendarId: values.calendarId,
-          description: values.description,
-          location: values.location,
+          title: formattedValues.title,
+          calendarId: formattedValues.calendarId,
+          description: formattedValues.description,
+          location: formattedValues.location,
           start: startDate.toISOString(),
           end: endDate.toISOString(),
-          allDay: values.allDay,
+          allDay: formattedValues.allDay,
           metadata: {
-            timezone: values.timezone,
-            attendees: values.attendees
+            timezone: formattedValues.timezone,
+            attendees: formattedValues.attendees
           }
         };
 
@@ -163,16 +172,16 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         });
       } else {
         await createEventMutation.mutateAsync({
-          title: values.title,
-          calendarId: Number(values.calendarId) || activeCalendar?.id || 1,
-          description: values.description || null,
-          location: values.location || null,
+          title: formattedValues.title,
+          calendarId: Number(formattedValues.calendarId) || activeCalendar?.id || 1,
+          description: formattedValues.description || null,
+          location: formattedValues.location || null,
           start: startDate.toISOString(),
           end: endDate.toISOString(),
-          allDay: values.allDay || false,
-          timezone: values.timezone || "UTC",
+          allDay: formattedValues.allDay || false,
+          timezone: formattedValues.timezone || "UTC",
           metadata: {
-            attendees: values.attendees
+            attendees: formattedValues.attendees
           }
         });
         toast({

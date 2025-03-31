@@ -103,7 +103,7 @@ export const eventFormSchema = z.object({
   timezone: z.string().min(1, "Timezone is required"),
   attendees: z.array(z.object({
     email: z.string().email("Invalid email"),
-    role: z.string()
+    role: z.enum(["CHAIR", "REQ-PARTICIPANT", "OPT-PARTICIPANT", "NON-PARTICIPANT"])
   })).default([]),
   resources: z.string().optional(),
   recurrence: z.object({

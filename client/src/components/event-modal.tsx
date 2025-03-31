@@ -74,16 +74,26 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   const onSubmit = async (data: EventFormData) => {
     try {
+      const formattedData = {
+        ...data,
+        start: new Date(data.start).toISOString(),
+        end: new Date(data.end).toISOString(),
+        attendees: data.attendees.map(attendee => ({
+          email: attendee.email,
+          role: attendee.role || "REQ-PARTICIPANT"
+        }))
+      };
+
       if (event?.id) {
-        await updateEvent({ ...event, ...data });
+        await updateEvent({ ...event, ...formattedData });
         toast({ title: "Event updated" });
       } else {
-        await createEvent(data);
+        await createEvent(formattedData);
         toast({ title: "Event created" });
       }
       onClose();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save event", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to save event. Please try again.", variant: "destructive" });
     }
   };
 
@@ -177,7 +187,22 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 )}
               />
             </div>
-
+            <FormField
+              control={form.control}
+              name="timezone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Timezone</FormLabel>
+                  <FormControl>
+                    <select {...field} className="w-full px-3 py-2 border rounded-md">
+                      {Intl.supportedValuesOf('timeZone').map((tz) => (
+                        <option key={tz} value={tz}>{tz}</option>
+                      ))}
+                    </select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="allDay"

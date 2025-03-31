@@ -208,22 +208,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="attendees"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Attendees (comma-separated emails)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      value={Array.isArray(field.value) ? field.value.join(", ") : ""} 
-                      onChange={(e) => field.onChange(e.target.value.split(",").map(email => email.trim()))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            
             <FormField
               control={form.control}
               name="start"

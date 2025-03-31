@@ -39,15 +39,19 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || activeCalendar?.id || 1,
-      timezone: "UTC",
+      timezone: event?.metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       attendees: event?.metadata?.attendees || [],
     },
   });
 
-  // Set default timezone value after form initialization
+  // Ensure timezone is set to browser's timezone when creating new event
   useEffect(() => {
-    const defaultTimezone = event?.metadata?.timezone || "UTC";
-    form.setValue("timezone", defaultTimezone);
+    if (!event) {
+      const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      form.setValue("timezone", browserTimezone);
+    } else {
+      form.setValue("timezone", event.metadata?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
+    }
   }, [event, form]);
 
   useEffect(() => {

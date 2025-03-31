@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { format, addHours } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCalDAV } from "../hooks/use-caldav";
 import { useToast } from "../hooks/use-toast";
-import { eventFormSchema } from "@shared/schema";
+import { EventFormData, eventFormSchema } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +36,7 @@ import { X } from "lucide-react";
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: any;
+  event?: EventFormData;
 }
 
 const ROLE_OPTIONS = [
@@ -131,7 +132,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} rows={3} />
+                    <Textarea {...field} />
                   </FormControl>
                 </FormItem>
               )}
@@ -184,102 +185,88 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
               render={({ field }) => (
                 <FormItem className="flex items-center space-x-2">
                   <FormControl>
-                    <Checkbox 
-                      checked={field.value} 
-                      onCheckedChange={field.onChange} 
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel>All day</FormLabel>
+                  <FormLabel>All Day</FormLabel>
                 </FormItem>
               )}
             />
 
             <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="recurrence">
-                <AccordionTrigger>Repeat Event</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="recurrence.frequency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select frequency" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="NONE">No repeat</SelectItem>
-                              <SelectItem value="DAILY">Daily</SelectItem>
-                              <SelectItem value="WEEKLY">Weekly</SelectItem>
-                              <SelectItem value="MONTHLY">Monthly</SelectItem>
-                              <SelectItem value="YEARLY">Yearly</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-
-                    {form.watch('recurrence.frequency') !== 'NONE' && (
-                      <FormField
-                        control={form.control}
-                        name="recurrence.interval"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Interval</FormLabel>
-                            <FormControl>
-                              <Input type="number" min={1} {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
               <AccordionItem value="attendees">
                 <AccordionTrigger>Attendees</AccordionTrigger>
                 <AccordionContent>
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     <div className="flex space-x-2">
-                      <Input 
-                        placeholder="Enter email address"
+                      <Input
+                        type="email"
+                        placeholder="Enter email"
                         value={attendeeInput}
                         onChange={(e) => setAttendeeInput(e.target.value)}
                       />
                       <Select value={selectedRole} onValueChange={setSelectedRole}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
-                          {ROLE_OPTIONS.map(role => (
-                            <SelectItem key={role.value} value={role.value}>
-                              {role.label}
+                          {ROLE_OPTIONS.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <Button type="button" onClick={addAttendee}>Add</Button>
+                      <Button type="button" onClick={addAttendee}>
+                        Add
+                      </Button>
                     </div>
-                    <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
                       {form.watch('attendees')?.map((attendee, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-sm">
-                            {attendee.email} ({ROLE_OPTIONS.find(r => r.value === attendee.role)?.label})
-                          </Badge>
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
+                        <Badge key={index} variant="secondary">
+                          {attendee}
+                          <Button
+                            type="button"
+                            variant="ghost"
                             size="sm"
+                            className="ml-1 h-auto p-0"
                             onClick={() => removeAttendee(index)}
                           >
-                            <X className="h-4 w-4" />
+                            <X size={14} />
                           </Button>
-                        </div>
+                        </Badge>
                       ))}
                     </div>
                   </div>
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="recurrence">
+                <AccordionTrigger>Recurrence</AccordionTrigger>
+                <AccordionContent>
+                  <FormField
+                    control={form.control}
+                    name="recurrence.frequency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Frequency</FormLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">None</SelectItem>
+                            <SelectItem value="DAILY">Daily</SelectItem>
+                            <SelectItem value="WEEKLY">Weekly</SelectItem>
+                            <SelectItem value="MONTHLY">Monthly</SelectItem>
+                            <SelectItem value="YEARLY">Yearly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
                 </AccordionContent>
               </AccordionItem>
 

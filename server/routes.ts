@@ -411,11 +411,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   end: caldavEvent.end,
                   allDay: caldavEvent.allDay,
                   recurrence: caldavEvent.recurrence || null,
-                  metadata: caldavEvent.metadata || null
+                  metadata: caldavEvent.metadata || { attendees: [] }
                 });
               }
 
-              events.push(event);
+              events.push({
+                ...event,
+                metadata: event.metadata || { attendees: [] }
+              });
             } catch (eventError) {
               console.error('Error processing individual event:', eventError);
               // Continue with other events even if one fails

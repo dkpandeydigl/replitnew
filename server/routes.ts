@@ -487,9 +487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create event on CalDAV server
       const timezone = validatedData.timezone === "Select Timezone" || !validatedData.timezone
         ? Intl.DateTimeFormat().resolvedOptions().timeZone
-        : validatedData.timezone;
-      // Convert dates to user's timezone for CalDAV
-      const timezone = validatedData.timezone || 'UTC';
+        : validatedData.timezone || 'UTC';
       const startDate = toDate(validatedData.start, { timeZone: timezone });
       const endDate = toDate(validatedData.end, { timeZone: timezone });
 

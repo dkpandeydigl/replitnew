@@ -95,7 +95,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         end: new Date(data.end).toISOString(),
         attendees: data.attendees?.map(attendee => ({
           email: attendee.email,
-          role: attendee.role
+          role: attendee.role || "REQ-PARTICIPANT"
         })) || [],
         recurrence: {
           ...data.recurrence,
@@ -112,16 +112,6 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       }
       
       onClose();
-
-      const formattedData = {
-        ...data,
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString(),
-        attendees: data.attendees?.map(attendee => ({
-          email: attendee.email,
-          role: attendee.role || "REQ-PARTICIPANT"
-        })) || []
-      };
 
       if (event?.id) {
         await updateEvent(event.id, formattedData);

@@ -53,7 +53,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
-    defaultValues: {
+    defaultValues: event || {
       title: "",
       description: "",
       location: "",

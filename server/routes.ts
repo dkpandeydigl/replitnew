@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if calendar with same name exists
       const existingCalendars = await storage.getCalendars(req.user.id);
       const calendarExists = existingCalendars.some(cal => cal.name.toLowerCase() === name.toLowerCase());
-      
+
       if (calendarExists) {
         return res.status(400).json({ message: "Calendar with this name already exists" });
       }
@@ -223,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const calendarExists = existingCalendars.some(cal => 
           cal.name.toLowerCase() === req.body.name.toLowerCase() && cal.id !== calendarId
         );
-        
+
         if (calendarExists) {
           return res.status(400).json({ message: "Calendar with this name already exists" });
         }
@@ -482,6 +482,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const caldav = new CalDAVClient(serverUrl, auth);
 
       // Create event on CalDAV server
+      const timezone = validatedData.timezone === "Select Timezone" || !validatedData.timezone
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : validatedData.timezone;
       const startDate = new Date(validatedData.start);
       const endDate = new Date(validatedData.end);
 
@@ -491,7 +494,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location: validatedData.location,
         start: startDate,
         end: endDate,
-        allDay: validatedData.allDay
+        allDay: validatedData.allDay,
+        timezone
       });
 
       // Save to local database
@@ -507,7 +511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         end: caldavEvent.end,
         allDay: caldavEvent.allDay,
         recurrence: null,
-        metadata: null
+        metadata: null,
+        timezone
       });
 
       res.status(201).json(newEvent);

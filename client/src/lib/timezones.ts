@@ -1,5 +1,6 @@
 
 export const timezones = [
+  "Select Timezone",
   "UTC",
   "America/New_York",
   "America/Chicago",
@@ -10,5 +11,4 @@ export const timezones = [
   "Asia/Tokyo",
   "Asia/Dubai",
   "Asia/Kolkata",
-  // Add more timezones as needed
 ];

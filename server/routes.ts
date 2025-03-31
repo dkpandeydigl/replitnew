@@ -586,6 +586,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update in local database
+      const metadata = {
+        attendees: validatedData.attendees.map(att => ({
+          email: att.email,
+          role: att.role || 'MEMBER'
+        })),
+        timezone: validatedData.timezone
+      };
+      console.log("Saving event with metadata:", metadata);
+      
       const updatedEvent = await storage.updateEvent(eventId, {
         title: validatedData.title,
         description: validatedData.description || null,
@@ -593,13 +602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         start: startDate,
         end: endDate,
         allDay: validatedData.allDay,
-        metadata: { 
-          attendees: validatedData.attendees.map(att => ({
-            email: att.email,
-            role: att.role || 'MEMBER'
-          })),
-          timezone: validatedData.timezone
-        }
+        metadata: metadata
       });
 
       res.json(updatedEvent);

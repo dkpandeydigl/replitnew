@@ -113,11 +113,6 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       
       onClose();
 
-      if (!data.calendarId) {
-        toast({ title: "Error", description: "Please select a calendar", variant: "destructive" });
-        return;
-      }
-
       const formattedData = {
         ...data,
         start: new Date(data.start).toISOString(),

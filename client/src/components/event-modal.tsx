@@ -1,29 +1,19 @@
-import { useState } from "react";
-import { format } from "date-fns";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useCalDAV } from "../hooks/use-caldav";
-import { useToast } from "../hooks/use-toast";
-import { EventFormData, eventFormSchema } from "@shared/schema";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "./ui/form";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
-import { Checkbox } from "./ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { timezones } from "../lib/timezones";
+
+import { useState } from 'react';
+import { format } from 'date-fns';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Checkbox } from './ui/checkbox';
+import { useToast } from './ui/use-toast';
+import { EventFormData, eventFormSchema } from '@shared/schema';
+import { useCalDAV } from '@/hooks/use-caldav';
+import { timezones } from '@/lib/timezones';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -63,53 +53,39 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
   });
 
   const onSubmit = async (data: EventFormData) => {
+    if (!activeCalendar) {
+      toast({
+        title: "Error",
+        description: "Please select a calendar first",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-
-      if (!data.calendarId && activeCalendar?.id) {
-        data.calendarId = activeCalendar.id;
-      }
-
-      if (!data.calendarId) {
-        toast({
-          title: "Error",
-          description: "Please select a calendar",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      const formattedData = {
-        ...data,
-        start: new Date(data.start).toISOString(),
-        end: new Date(data.end).toISOString(),
-        attendees: data.attendees || [],
-        recurrence: {
-          frequency: data.recurrence?.frequency || 'NONE',
-          interval: data.recurrence?.interval || 1,
-          count: data.recurrence?.count,
-          until: data.recurrence?.until,
-          byDay: data.recurrence?.byDay || []
-        }
-      };
-
       if (event?.id) {
         await updateEventMutation.mutateAsync({
           id: event.id,
-          ...formattedData
+          ...data,
         });
-        toast({ title: "Event updated successfully" });
+        toast({
+          title: "Success",
+          description: "Event updated successfully",
+        });
       } else {
-        await createEventMutation.mutateAsync(formattedData);
-        toast({ title: "Event created successfully" });
+        await createEventMutation.mutateAsync(data);
+        toast({
+          title: "Success",
+          description: "Event created successfully",
+        });
       }
-
       onClose();
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to save event",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -197,7 +173,7 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Timezone</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select timezone" />
@@ -221,12 +197,12 @@ export default function EventModal({ isOpen, onClose, event, start, end }: Event
               render={({ field }) => (
                 <FormItem className="flex items-center space-x-2">
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
+                    <Checkbox 
+                      checked={field.value} 
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel className="!mt-0">All Day</FormLabel>
+                  <FormLabel className="!mt-0">All Day Event</FormLabel>
                 </FormItem>
               )}
             />

@@ -103,7 +103,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       if (event?.id) {
         console.log('Updating event:', event);
         console.log('Form data:', data);
-        
+
         // Format data according to schema requirements
         const updateData = {
           id: event.id,
@@ -117,7 +117,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         };
 
         console.log('Update data being sent:', updateData);
-        
+
         // Debug logging for update
         console.log("Sending update data:", updateData);
         await updateEventMutation.mutateAsync(updateData);
@@ -154,9 +154,9 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] w-[90vw] mx-auto">
+      <DialogContent className="max-h-[80vh] w-[90%] max-w-2xl overflow-y-auto my-8">
         <DialogHeader>
-          <DialogTitle>{event?.id ? "Edit Event" : "Create Event"}</DialogTitle>
+          <DialogTitle>{event ? "Edit Event" : "Create Event"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-1">
@@ -245,11 +245,11 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                       onChange={(e) => {
                         const newTz = e.target.value;
                         field.onChange(newTz);
-                        
+
                         // Convert dates to new timezone
                         const startDate = form.getValues("start");
                         const endDate = form.getValues("end");
-                        
+
                         if (startDate && endDate) {
                           const startInNewTz = formatInTimeZone(
                             new Date(startDate),
@@ -261,7 +261,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                             newTz,
                             "yyyy-MM-dd'T'HH:mm"
                           );
-                          
+
                           form.setValue("start", startInNewTz);
                           form.setValue("end", endInNewTz);
                         }

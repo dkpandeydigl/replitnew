@@ -389,19 +389,17 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                       <ScrollArea className="h-24 w-full rounded-md border">
                         <div className="p-2">
                           {field.value?.map((attendee: { email: string, role?: string }, index: number) => (
-                            <div key={index} className="flex items-center justify-between py-1">
-                              <div className="flex items-center gap-2">
-                                <span>{attendee.email}</span>
-                                <select
-                                  className="text-xs rounded-md border border-input bg-background px-2 py-1"
-                                  value={attendee.role || "MEMBER"}
-                                  onChange={(e) => handleRoleChange(attendee.email, e.target.value)}
-                                >
-                                  <option value="MEMBER">Member</option>
-                                  <option value="CHAIRMAN">Chairman</option>
-                                  <option value="SECRETARY">Secretary</option>
-                                </select>
-                              </div>
+                            <div key={index} className="flex items-center gap-2 py-1">
+                              <span>{attendee.email}</span>
+                              <select
+                                className="text-xs rounded-md border border-input bg-background px-2 py-1"
+                                value={attendee.role || "MEMBER"}
+                                onChange={(e) => handleRoleChange(attendee.email, e.target.value)}
+                              >
+                                <option value="MEMBER">Member</option>
+                                <option value="CHAIRMAN">Chairman</option>
+                                <option value="SECRETARY">Secretary</option>
+                              </select>
                               <Button
                                 type="button"
                                 variant="ghost"

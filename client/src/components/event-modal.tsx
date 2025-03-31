@@ -77,19 +77,19 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
     }
   }, [isOpen, event, activeCalendar?.id, form]);
 
-  async function onSubmit(data: EventFormData) {
+  async function onSubmit(values: EventFormData) {
     try {
       // Debug logging
-      console.log("Form data received:", data);
+      console.log("Form data received:", values);
       console.log("Event context:", event);
       console.log("Active calendar:", activeCalendar);
 
-      if (!data.title || !data.start || !data.end || !data.calendarId) {
+      if (!values.title || !values.start || !values.end || !values.calendarId) {
         console.log("Missing required fields:", {
-          title: !data.title,
-          start: !data.start,
-          end: !data.end,
-          calendarId: !data.calendarId
+          title: !values.title,
+          start: !values.start,
+          end: !values.end,
+          calendarId: !values.calendarId
         });
         toast({
           title: "Error",
@@ -111,41 +111,50 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         return;
       }
 
+      const startDate = new Date(values.start);
+      const endDate = new Date(values.end);
+
       if (event?.id) {
         console.log('Updating event:', event);
-        console.log('Form data:', data);
+        console.log('Form data:', values);
 
-        // Format data according to schema requirements
-        const updateData = {
+        const eventData = {
           id: event.id,
-          title: data.title,
-          calendarId: Number(data.calendarId),
-          description: data.description || '',
-          location: data.location || '',
-          start: new Date(data.start).toISOString(),
-          end: new Date(data.end).toISOString(),
-          allDay: data.allDay || false
+          title: values.title,
+          calendarId: values.calendarId,
+          description: values.description,
+          location: values.location,
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+          allDay: values.allDay,
+          metadata: {
+            timezone: values.timezone,
+            attendees: values.attendees
+          }
         };
 
-        console.log('Update data being sent:', updateData);
+        console.log('Update data being sent:', eventData);
 
         // Debug logging for update
-        console.log("Sending update data:", updateData);
-        await updateEventMutation.mutateAsync(updateData);
+        console.log("Sending update data:", eventData);
+        await updateEventMutation.mutateAsync(eventData);
         toast({
           title: "Success",
           description: "Event updated successfully",
         });
       } else {
         await createEventMutation.mutateAsync({
-          title: data.title,
-          calendarId: Number(data.calendarId) || activeCalendar?.id || 1,
-          description: data.description || null,
-          location: data.location || null,
-          start: new Date(data.start).toISOString(),
-          end: new Date(data.end).toISOString(),
-          allDay: data.allDay || false,
-          timezone: data.timezone || "UTC"
+          title: values.title,
+          calendarId: Number(values.calendarId) || activeCalendar?.id || 1,
+          description: values.description || null,
+          location: values.location || null,
+          start: startDate.toISOString(),
+          end: endDate.toISOString(),
+          allDay: values.allDay || false,
+          timezone: values.timezone || "UTC",
+          metadata: {
+            attendees: values.attendees
+          }
         });
         toast({
           title: "Success",

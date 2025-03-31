@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, addHours } from "date-fns";
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCalDAV } from "../hooks/use-caldav";
@@ -23,33 +23,20 @@ import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Checkbox } from "./ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./ui/accordion";
-import { Badge } from "./ui/badge";
-import { X } from "lucide-react";
+import { timezones } from "../lib/timezones";
 
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  event?: EventFormData;
+  event?: any;
+  start?: Date;
+  end?: Date;
 }
 
-const ROLE_OPTIONS = [
-  { value: 'CHAIR', label: 'Chairman' },
-  { value: 'SEC', label: 'Secretary' },
-  { value: 'MEMBER', label: 'Member' }
-];
-
-export default function EventModal({ isOpen, onClose, event }: EventModalProps) {
-  const { activeCalendar, createEvent, updateEvent } = useCalDAV();
+export function EventModal({ isOpen, onClose, event, start, end }: EventModalProps) {
+  const { activeCalendar, createEventMutation, updateEventMutation } = useCalDAV();
   const { toast } = useToast();
-  const now = new Date();
-  const [attendeeInput, setAttendeeInput] = useState('');
-  const [selectedRole, setSelectedRole] = useState('MEMBER');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -57,13 +44,16 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       title: event?.title || "",
       description: event?.description || "",
       location: event?.location || "",
-      start: event?.start ? format(new Date(event.start), "yyyy-MM-dd'T'HH:mm") : format(addHours(now, 1), "yyyy-MM-dd'T'HH:mm"),
-      end: event?.end ? format(new Date(event.end), "yyyy-MM-dd'T'HH:mm") : format(addHours(now, 2), "yyyy-MM-dd'T'HH:mm"),
+      start: event?.start ? format(new Date(event.start), "yyyy-MM-dd'T'HH:mm") 
+        : start ? format(start, "yyyy-MM-dd'T'HH:mm") 
+        : format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+      end: event?.end ? format(new Date(event.end), "yyyy-MM-dd'T'HH:mm")
+        : end ? format(end, "yyyy-MM-dd'T'HH:mm")
+        : format(new Date(Date.now() + 3600000), "yyyy-MM-dd'T'HH:mm"),
       allDay: event?.allDay || false,
-      calendarId: event?.calendarId || activeCalendar?.id || 0,
+      calendarId: event?.calendarId || activeCalendar?.id,
       timezone: event?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       attendees: event?.attendees || [],
-      resources: event?.resources || "",
       recurrence: event?.recurrence || {
         frequency: 'NONE',
         interval: 1,
@@ -74,8 +64,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
 
   const onSubmit = async (data: EventFormData) => {
     try {
-      console.log("Form data:", data);
-      
+      setIsSubmitting(true);
+
       if (!data.calendarId && activeCalendar?.id) {
         data.calendarId = activeCalendar.id;
       }
@@ -93,58 +83,37 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         ...data,
         start: new Date(data.start).toISOString(),
         end: new Date(data.end).toISOString(),
-        attendees: data.attendees?.map(attendee => ({
-          email: attendee.email,
-          role: attendee.role || "REQ-PARTICIPANT"
-        })) || [],
+        attendees: data.attendees || [],
         recurrence: {
-          ...data.recurrence,
+          frequency: data.recurrence?.frequency || 'NONE',
+          interval: data.recurrence?.interval || 1,
+          count: data.recurrence?.count,
+          until: data.recurrence?.until,
           byDay: data.recurrence?.byDay || []
         }
       };
 
       if (event?.id) {
-        await updateEvent(event.id, formattedData);
+        await updateEventMutation.mutateAsync({
+          id: event.id,
+          ...formattedData
+        });
         toast({ title: "Event updated successfully" });
       } else {
-        await createEvent(formattedData);
+        await createEventMutation.mutateAsync(formattedData);
         toast({ title: "Event created successfully" });
       }
-      
-      onClose();
 
-      if (event?.id) {
-        await updateEvent(event.id, formattedData);
-        toast({ title: "Event updated successfully" });
-      } else {
-        await createEvent(formattedData);
-        toast({ title: "Event created successfully" });
-      }
       onClose();
-    } catch (error) {
-      console.error('Error saving event:', error);
-      toast({ 
-        title: "Error", 
-        description: error instanceof Error ? error.message : "Failed to save event. Please try again.", 
-        variant: "destructive" 
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save event",
+        variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-
-  const addAttendee = () => {
-    if (attendeeInput && attendeeInput.includes('@')) {
-      const currentAttendees = form.getValues('attendees') || [];
-      form.setValue('attendees', [...currentAttendees, { 
-        email: attendeeInput,
-        role: selectedRole 
-      }]);
-      setAttendeeInput('');
-    }
-  };
-
-  const removeAttendee = (index: number) => {
-    const currentAttendees = form.getValues('attendees') || [];
-    form.setValue('attendees', currentAttendees.filter((_, i) => i !== index));
   };
 
   return (
@@ -175,7 +144,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea {...field} value={field.value || ''} />
                   </FormControl>
                 </FormItem>
               )}
@@ -188,7 +157,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 <FormItem>
                   <FormLabel>Location</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} value={field.value || ''} />
                   </FormControl>
                 </FormItem>
               )}
@@ -221,22 +190,31 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                 )}
               />
             </div>
+
             <FormField
               control={form.control}
               name="timezone"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Timezone</FormLabel>
-                  <FormControl>
-                    <select {...field} className="w-full px-3 py-2 border rounded-md">
-                      {Intl.supportedValuesOf('timeZone').map((tz) => (
-                        <option key={tz} value={tz}>{tz}</option>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timezone" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {timezones.map((timezone) => (
+                        <SelectItem key={timezone} value={timezone}>
+                          {timezone}
+                        </SelectItem>
                       ))}
-                    </select>
-                  </FormControl>
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="allDay"
@@ -248,114 +226,17 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormLabel>All Day</FormLabel>
+                  <FormLabel className="!mt-0">All Day</FormLabel>
                 </FormItem>
               )}
             />
 
-            <Accordion type="single" collapsible className="w-full">
-              <AccordionItem value="attendees">
-                <AccordionTrigger>Attendees</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2">
-                    <div className="flex space-x-2">
-                      <Input
-                        type="email"
-                        placeholder="Enter email"
-                        value={attendeeInput}
-                        onChange={(e) => setAttendeeInput(e.target.value)}
-                      />
-                      <Select value={selectedRole} onValueChange={setSelectedRole}>
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROLE_OPTIONS.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button type="button" onClick={addAttendee}>
-                        Add
-                      </Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {form.watch('attendees')?.map((attendee: { email: string; role: string }, index) => (
-                        <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                          <span>{attendee.email}</span>
-                          <span className="text-xs">({attendee.role})</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="ml-1 h-auto p-0"
-                            onClick={() => removeAttendee(index)}
-                          >
-                            <X size={14} />
-                          </Button>
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="recurrence">
-                <AccordionTrigger>Recurrence</AccordionTrigger>
-                <AccordionContent>
-                  <FormField
-                    control={form.control}
-                    name="recurrence.frequency"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Frequency</FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="NONE">None</SelectItem>
-                            <SelectItem value="DAILY">Daily</SelectItem>
-                            <SelectItem value="WEEKLY">Weekly</SelectItem>
-                            <SelectItem value="MONTHLY">Monthly</SelectItem>
-                            <SelectItem value="YEARLY">Yearly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormItem>
-                    )}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-
-              <AccordionItem value="resources">
-                <AccordionTrigger>Meeting Resources</AccordionTrigger>
-                <AccordionContent>
-                  <FormField
-                    control={form.control}
-                    name="resources"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea 
-                            {...field} 
-                            placeholder="Enter required resources (e.g., Projector, Conference Room)"
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">
-                {event?.id ? "Update" : "Create"}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : event?.id ? "Update" : "Create"}
               </Button>
             </div>
           </form>

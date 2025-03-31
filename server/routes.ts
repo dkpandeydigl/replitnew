@@ -514,7 +514,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         end: caldavEvent.end,
         allDay: caldavEvent.allDay,
         recurrence: null,
-        metadata: { attendees: validatedData.attendees },
+        metadata: {
+          attendees: validatedData.attendees.map(att => ({
+            email: att.email,
+            role: att.role || 'MEMBER'
+          })),
+          timezone
+        },
         timezone
       });
 
@@ -582,7 +588,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location: validatedData.location || '',
         start: startDate,
         end: endDate,
-        allDay: validatedData.allDay
+        allDay: validatedData.allDay,
+        attendees: validatedData.attendees.map(att => ({ email: att.email, role: att.role || 'MEMBER'}))
       });
 
       // Update in local database
@@ -594,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timezone: validatedData.timezone
       };
       console.log("Saving event with metadata:", metadata);
-      
+
       const updatedEvent = await storage.updateEvent(eventId, {
         title: validatedData.title,
         description: validatedData.description || null,

@@ -305,11 +305,12 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
                         const newTz = e.target.value;
                         field.onChange(newTz);
 
-                        // Convert dates to new timezone
                         const startDate = form.getValues("start");
                         const endDate = form.getValues("end");
+                        const currentTz = form.getValues("timezone");
 
-                        if (startDate && endDate) {
+                        // Only convert if explicitly changing to a new timezone
+                        if (startDate && endDate && currentTz !== "Select Timezone" && newTz !== "Select Timezone") {
                           const startInNewTz = formatInTimeZone(
                             new Date(startDate),
                             newTz,

@@ -41,7 +41,10 @@ export default function ServerConnection() {
   const { servers, serversLoading, connectServerMutation } = useCalDAV();
   const isConnected = servers && servers.length > 0;
   const [showPassword, setShowPassword] = useState(false);
-  const [defaultTimezone, setDefaultTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [defaultTimezone, setDefaultTimezone] = useState(() => {
+    const savedTimezone = localStorage.getItem('defaultTimezone');
+    return savedTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  });
 
   const form = useForm<z.infer<typeof serverSchema>>({
     resolver: zodResolver(serverSchema),

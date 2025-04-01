@@ -75,6 +75,7 @@ type CalDAVContextType = {
   // View type
   viewType: string;
   setViewType: (type: string) => void;
+  userTimezone: string; // Added userTimezone
 };
 
 // Default context with empty values
@@ -109,7 +110,8 @@ const defaultContextValue: CalDAVContextType = {
   setDateRange: () => {},
 
   viewType: 'dayGridMonth',
-  setViewType: () => {}
+  setViewType: () => {},
+  userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Added default timezone
 };
 
 // Create context with default values
@@ -127,6 +129,23 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
     end: null
   });
   const [viewType, setViewType] = useState<string>('dayGridMonth');
+  const [userTimezone, setUserTimezone] = useState<string>(() => {
+    return localStorage.getItem('defaultTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  });
+
+  // Load user timezone on mount
+  useEffect(() => {
+    fetch('/api/user')
+      .then(res => res.json())
+      .then(data => {
+        if (data.timezone) {
+          setUserTimezone(data.timezone);
+          localStorage.setItem('defaultTimezone', data.timezone);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
 
   // Servers Query
   const {
@@ -307,7 +326,7 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
       try {
         const response = await apiRequest('POST', '/api/calendars', data);
         const contentType = response.headers.get('content-type');
-        
+
         if (!response.ok) {
           if (contentType?.includes('application/json')) {
             const errorData = await response.json();
@@ -318,11 +337,11 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
             throw new Error('Server error: Failed to create calendar');
           }
         }
-        
+
         if (!contentType?.includes('application/json')) {
           throw new Error('Invalid server response: Expected JSON');
         }
-        
+
         return await response.json();
       } catch (error: any) {
         console.error('Calendar creation error:', error);
@@ -437,7 +456,8 @@ export function CalDAVProvider({ children }: { children: ReactNode }) {
     setDateRange,
 
     viewType,
-    setViewType
+    setViewType,
+    userTimezone, // Added userTimezone
   };
 
   return (

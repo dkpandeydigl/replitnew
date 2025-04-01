@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useCalDAV } from '@/hooks/use-caldav';
+import { timezones } from '@/lib/timezones';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';

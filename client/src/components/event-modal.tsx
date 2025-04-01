@@ -39,7 +39,7 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
       end: event ? new Date(event.end).toISOString().slice(0, 16) : oneHourLater.toISOString().slice(0, 16),
       allDay: event?.allDay || false,
       calendarId: event?.calendarId || activeCalendar?.id || 1,
-      timezone: localStorage.getItem('defaultTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timezone: event?.metadata?.timezone || localStorage.getItem('defaultTimezone') || Intl.DateTimeFormat().resolvedOptions().timeZone,
       attendees: event?.metadata?.attendees || [],
     },
   });

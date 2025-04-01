@@ -40,8 +40,7 @@ export default function ServerConnection() {
   const isConnected = servers && servers.length > 0;
   const [showPassword, setShowPassword] = useState(false);
   const [defaultTimezone, setDefaultTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  import { timezones } from '@/lib/timezones';
-  
+
   const form = useForm<z.infer<typeof serverSchema>>({
     resolver: zodResolver(serverSchema),
     defaultValues: {
@@ -52,9 +51,9 @@ export default function ServerConnection() {
       token: '',
     },
   });
-  
+
   const authType = form.watch('authType');
-  
+
   function onSubmit(values: z.infer<typeof serverSchema>) {
     // Add this console.log just for debugging
     console.log("Connecting with values:", { 
@@ -64,13 +63,13 @@ export default function ServerConnection() {
       password: values.password ? "***" : undefined,
       token: values.token ? "***" : undefined
     });
-    
+
     // Format URL for DAViCal - ensure proper path structure
     let serverUrl = values.url;
     if (values.authType === 'username' && values.username && serverUrl.includes('zpush.ajaydata.com/davical')) {
       serverUrl = `https://zpush.ajaydata.com/davical/caldav.php/${values.username}/`;
     }
-    
+
     connectServerMutation.mutate({
       url: serverUrl,
       authType: values.authType,
@@ -79,13 +78,13 @@ export default function ServerConnection() {
       token: values.token
     });
   }
-  
+
   return (
     <div className="p-4 border-b border-gray-200">
       <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
         Server Connection
       </h2>
-      
+
       {isConnected && servers?.length > 0 ? (
         <div>
           <Alert className="bg-green-50 border-green-200 mb-2">
@@ -142,7 +141,7 @@ export default function ServerConnection() {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="authType"
@@ -172,7 +171,7 @@ export default function ServerConnection() {
                 </FormItem>
               )}
             />
-            
+
             {authType === 'username' && (
               <>
                 <FormField
@@ -191,7 +190,7 @@ export default function ServerConnection() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -224,7 +223,7 @@ export default function ServerConnection() {
                 />
               </>
             )}
-            
+
             {authType === 'token' && (
               <FormField
                 control={form.control}
@@ -243,7 +242,7 @@ export default function ServerConnection() {
                 )}
               />
             )}
-            
+
             <Button 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90"

@@ -38,6 +38,7 @@ export default function ServerConnection() {
   const { servers, serversLoading, connectServerMutation } = useCalDAV();
   const isConnected = servers && servers.length > 0;
   const [showPassword, setShowPassword] = useState(false);
+  const [defaultTimezone, setDefaultTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   
   const form = useForm<z.infer<typeof serverSchema>>({
     resolver: zodResolver(serverSchema),
@@ -93,6 +94,25 @@ export default function ServerConnection() {
           </Alert>
           <div className="text-xs text-gray-600 break-all px-2">
             Server URL: {servers[0].url}
+          </div>
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 block mb-2">
+              Default Timezone
+            </label>
+            <select
+              value={defaultTimezone}
+              onChange={(e) => {
+                setDefaultTimezone(e.target.value);
+                localStorage.setItem('defaultTimezone', e.target.value);
+              }}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+            >
+              {timezones.map((tz) => (
+                <option key={tz} value={tz}>
+                  {tz}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       ) : (

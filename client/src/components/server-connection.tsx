@@ -117,12 +117,27 @@ export default function ServerConnection() {
               ))}
             </select>
             <Button
-              onClick={() => {
-                localStorage.setItem('defaultTimezone', defaultTimezone);
-                toast({
-                  description: "Timezone saved successfully",
-                  duration: 2000
-                });
+              onClick={async () => {
+                try {
+                  localStorage.setItem('defaultTimezone', defaultTimezone);
+                  await fetch('/api/user/timezone', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ timezone: defaultTimezone }),
+                  });
+                  toast({
+                    description: "Timezone saved successfully",
+                    duration: 2000
+                  });
+                } catch (error) {
+                  toast({
+                    description: "Failed to save timezone",
+                    variant: "destructive",
+                    duration: 2000
+                  });
+                }
               }}
               className="w-full"
             >

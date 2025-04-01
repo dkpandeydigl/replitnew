@@ -1,4 +1,3 @@
-
 import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -8,11 +7,13 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  timezone: text("timezone"), // Added timezone field
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  timezone: true, // Added timezone to the insert schema
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

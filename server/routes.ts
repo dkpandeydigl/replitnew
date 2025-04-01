@@ -140,6 +140,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Calendar routes
+  app.post("/api/user/timezone", async (req, res) => {
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
+    
+    try {
+      const { timezone } = req.body;
+      if (!timezone) {
+        return res.status(400).json({ message: "Timezone is required" });
+      }
+      
+      await storage.updateUser(req.user.id, { timezone });
+      res.json({ message: "Timezone updated successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update timezone" });
+    }
+  });
+
   app.get("/api/calendars", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
 

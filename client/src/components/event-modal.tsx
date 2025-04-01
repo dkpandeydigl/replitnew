@@ -201,6 +201,8 @@ export default function EventModal({ isOpen, onClose, event }: EventModalProps) 
         });
       }
       onClose();
+      //Save timezone to local storage
+      localStorage.setItem('defaultTimezone', values.timezone);
     } catch (error) {
       console.error("Failed to save event:", error);
       toast({

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { 
   Form, 
@@ -36,6 +37,7 @@ const serverSchema = z.object({
 });
 
 export default function ServerConnection() {
+  const { toast } = useToast();
   const { servers, serversLoading, connectServerMutation } = useCalDAV();
   const isConnected = servers && servers.length > 0;
   const [showPassword, setShowPassword] = useState(false);
@@ -106,7 +108,7 @@ export default function ServerConnection() {
                 setDefaultTimezone(e.target.value);
                 localStorage.setItem('defaultTimezone', e.target.value);
               }}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background mb-2"
             >
               {timezones.map((tz) => (
                 <option key={tz} value={tz}>
@@ -114,6 +116,18 @@ export default function ServerConnection() {
                 </option>
               ))}
             </select>
+            <Button
+              onClick={() => {
+                localStorage.setItem('defaultTimezone', defaultTimezone);
+                toast({
+                  description: "Timezone saved successfully",
+                  duration: 2000
+                });
+              }}
+              className="w-full"
+            >
+              Save Timezone
+            </Button>
           </div>
         </div>
       ) : (

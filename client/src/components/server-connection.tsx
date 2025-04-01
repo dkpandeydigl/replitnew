@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { timezones } from '@/lib/timezones';
 
 const serverSchema = z.object({
   url: z.string().url('Please enter a valid URL'),

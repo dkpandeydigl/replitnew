@@ -39,6 +39,7 @@ export default function ServerConnection() {
   const isConnected = servers && servers.length > 0;
   const [showPassword, setShowPassword] = useState(false);
   const [defaultTimezone, setDefaultTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  import { timezones } from '@/lib/timezones';
   
   const form = useForm<z.infer<typeof serverSchema>>({
     resolver: zodResolver(serverSchema),
